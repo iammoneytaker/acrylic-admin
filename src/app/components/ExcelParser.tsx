@@ -22,15 +22,38 @@ const mapExcelDataToSupabase = (
   excelData: ParsedData,
   hyperlinks: { [key: string]: string }
 ): SupabaseData => {
+  const getFieldValue = (field: string): string | null => {
+    const hyperlinkValue = hyperlinks[field];
+    const cellValue = excelData[field] as string;
+
+    console.log(`Field: ${field}`);
+    console.log(`Hyperlink value: ${hyperlinkValue}`);
+    console.log(`Cell value: ${cellValue}`);
+
+    if (hyperlinkValue && isValidHttpUrl(hyperlinkValue)) {
+      console.log(`Using hyperlink value for ${field}`);
+      return hyperlinkValue;
+    } else if (cellValue && isValidHttpUrl(cellValue)) {
+      console.log(`Using cell value as URL for ${field}`);
+      return cellValue;
+    } else if (cellValue) {
+      console.log(`Using cell value for ${field}`);
+      return cellValue;
+    } else {
+      console.log(`No valid value found for ${field}`);
+      return null;
+    }
+  };
+
   return {
     response_date: formatDate(excelData['응답일시'] as string),
     participant_number: Number(excelData['참여자']),
     name_or_company: excelData['성함 혹은 업체명(*)'] as string,
     contact: excelData['연락처(*)'] as string,
-    email: excelData['이메일 ( 세금계산서 하실 시 필수)'] as string,
-    business_registration_file:
-      hyperlinks['사업자 등록증 ( 세금계산서 하실 시 필수 )'] ||
-      (excelData['사업자 등록증 ( 세금계산서 하실 시 필수 )'] as string),
+    email: (excelData['이메일 ( 세금계산서 하실 시 필수)'] as string) || null,
+    business_registration_file: getFieldValue(
+      '사업자 등록증 ( 세금계산서 하실 시 필수 )'
+    ),
     privacy_agreement: excelData['개인정보 수집 동의(*)'] === 'Y',
     first_time_buyer:
       excelData['처음이신가요? 구매한 적 있으신가요?(*)'] === '처음입니다.',
@@ -43,20 +66,22 @@ const mapExcelDataToSupabase = (
     color: excelData['컬러를 알려주세요.(*)'] as string,
     quantity: excelData['수량은 몇개인가요?(*)']?.toString() || null,
     desired_delivery: excelData['납품은 언제쯤 원하시나요?(*)'] as string,
-    product_image:
-      hyperlinks['제품을 설명할 수 있는 자료를 올려주세요.( 이미지 )'] ||
-      (excelData[
-        '제품을 설명할 수 있는 자료를 올려주세요.( 이미지 )'
-      ] as string),
-    product_drawing:
-      hyperlinks['제품 도면을 올려주세요'] ||
-      (excelData['제품 도면을 올려주세요'] as string),
+    product_image: getFieldValue(
+      '제품을 설명할 수 있는 자료를 올려주세요.( 이미지 )'
+    ),
+    product_drawing: getFieldValue('제품 도면을 올려주세요'),
     inquiry: excelData['문의사항을 적어주세요.(*)'] as string,
-    referral_source: excelData[
-      '아크릴 맛집을 어느 경로를 통해 오셨는지 알려주시면 감사하겠습니다!(*)'
-    ] as string,
+    referral_source:
+      (excelData[
+        '아크릴 맛집을 어느 경로를 통해 오셨는지 알려주시면 감사하겠습니다!(*)'
+      ] as string) || null,
   };
 };
+
+function isValidHttpUrl(string: string) {
+  const regex = /(http|https):\/\//;
+  return regex.test(string);
+}
 
 const ExcelParser: React.FC = () => {
   const [parsedData, setParsedData] = useState<SupabaseData[]>([]);
@@ -107,20 +132,31 @@ const ExcelParser: React.FC = () => {
         defval: null,
       });
 
-      // Extract hyperlinks
-      const hyperlinks: { [key: string]: string } = {};
-      Object.keys(ws).forEach((cell) => {
-        if (ws[cell].l) {
-          const col = XLSX.utils.decode_col(cell.replace(/\d+$/, ''));
-          const row = XLSX.utils.decode_row(cell.replace(/^[A-Z]+/, ''));
-          const header = Object.keys(data[0])[col];
-          hyperlinks[header] = ws[cell].l.Target;
-        }
+      // console.log('Raw Excel data:', data);
+
+      const mappedData = data.map((row, index) => {
+        // 각 행에 대한 하이퍼링크 추출
+        const rowHyperlinks: { [key: string]: string } = {};
+        Object.keys(ws).forEach((cell) => {
+          if (ws[cell].l) {
+            const cellAddress = XLSX.utils.decode_cell(cell);
+            if (cellAddress.r === index + 1) {
+              const header = Object.keys(row)[cellAddress.c];
+              rowHyperlinks[header] = ws[cell].l.Target;
+            }
+          }
+        });
+
+        // console.log(`Row ${index + 1} hyperlinks:`, rowHyperlinks);
+        // console.log(`Row ${index + 1} data:`, row);
+
+        const mappedRow = mapExcelDataToSupabase(row, rowHyperlinks);
+        console.log(`Mapped row ${index + 1}:`, mappedRow);
+
+        return mappedRow;
       });
 
-      const mappedData = data.map((row) =>
-        mapExcelDataToSupabase(row, hyperlinks)
-      );
+      console.log(mappedData);
 
       const existingDataMap = new Map(
         parsedData.map((item) => [
@@ -143,14 +179,20 @@ const ExcelParser: React.FC = () => {
 
         const isUpdated =
           newItem.product_description !== existingItem.product_description ||
-          newItem.product_description !== existingItem.thickness ||
-          newItem.product_description !== existingItem.product_size ||
-          newItem.product_description !== existingItem.product_image ||
-          newItem.product_description !==
-            existingItem.business_registration_file;
+          newItem.thickness !== existingItem.thickness ||
+          newItem.product_size !== existingItem.product_size ||
+          newItem.product_image?.toLowerCase() !==
+            existingItem.product_image?.toLowerCase() ||
+          newItem.business_registration_file?.toLowerCase() !==
+            existingItem.business_registration_file?.toLowerCase();
 
         if (isUpdated) {
+          console.log(
+            newItem.product_image?.toLowerCase() !==
+              existingItem.product_image?.toLowerCase()
+          );
           console.log('Updated item:', newItem);
+          console.log('exist item:', existingItem);
         }
         return isUpdated;
       });
@@ -160,7 +202,6 @@ const ExcelParser: React.FC = () => {
       console.log('Sample existing item:', parsedData[0]);
       console.log('Sample new item:', mappedData[0]);
       console.log('New and updated data:', newAndUpdatedData.length);
-
       setNewData(newAndUpdatedData);
     };
     reader.readAsBinaryString(file);

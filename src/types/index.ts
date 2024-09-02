@@ -4,8 +4,8 @@ export interface SupabaseData {
   participant_number: number;
   name_or_company: string;
   contact: string;
-  email: string;
-  business_registration_file: string;
+  email: string | null;
+  business_registration_file: string | null;
   privacy_agreement: boolean;
   first_time_buyer: boolean;
   product_description: string;
@@ -15,8 +15,8 @@ export interface SupabaseData {
   color: string;
   quantity: string | null;
   desired_delivery: string;
-  product_image: string;
-  product_drawing: string;
+  product_image: string | null;
+  product_drawing: string | null;
   inquiry: string;
-  referral_source: string;
+  referral_source: string | null;
 }
