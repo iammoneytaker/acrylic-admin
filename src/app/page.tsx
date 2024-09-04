@@ -1,15 +1,40 @@
+'use client';
+import { useEffect, useState } from 'react';
+import Auth from './components/Auth';
 import ExcelParser from './components/ExcelParser';
+import { Session, createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function Home() {
+  const [session, setSession] = useState<Session | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-6 text-center">
         아크릴맛집 관리 시스템
       </h1>
-      <ExcelParser />
+      {!session ? <Auth /> : <ExcelParser />}
     </div>
   );
 }
+
+//TODO: Detail 화면 구성하기.
+// TODO: 이미지, 문서 다운로드 받을 수 있는지 확인하기
+// TODO: 거래명세서, 견적서, 상담서 작성 구현
 
 // 'use client';
 
