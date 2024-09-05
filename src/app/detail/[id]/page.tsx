@@ -5,6 +5,17 @@ import { useParams } from 'next/navigation';
 import { supabase } from '../../../lib/supabaseClient';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import dynamic from 'next/dynamic';
+
+const OnlineQuoteGenerator = dynamic(() => import('./OnlineQuoteGenerator'), {
+  ssr: false,
+});
+const TransactionStatementGenerator = dynamic(
+  () => import('./TransactionStatementGenerator'),
+  {
+    ssr: false,
+  }
+);
 
 const LinkParser = ({ text }: any) => {
   const linkRegex = /(https?:\/\/[^\s&]+)/g;
@@ -25,7 +36,6 @@ const LinkParser = ({ text }: any) => {
     if (value.trim() == '') return false;
     return true;
   });
-  console.log(parts);
 
   // parts.filter((value) => value !== '');
 
@@ -82,6 +92,8 @@ const DetailPage = () => {
   const [submission, setSubmission] = useState<SubmissionDetail | null>(null);
   const [consultationNotes, setConsultationNotes] = useState('');
   const [showEditor, setShowEditor] = useState(false);
+  const [showQuoteModal, setShowQuoteModal] = useState(false);
+  const [showTransactionModal, setShowTransactionModal] = useState(false);
 
   useEffect(() => {
     const fetchSubmission = async () => {
@@ -126,6 +138,24 @@ const DetailPage = () => {
     } else {
       alert('상담 내용이 저장되었습니다.');
     }
+  };
+
+  const supplierData = {
+    companyName: '아크릴맛집',
+    representative: '윤우섭',
+    businessNumber: '382-75-00268',
+    address: ' 서울특별시 중구 을지로33길 33, 청자빌딩 201호',
+    contactNumber: '010-2410-2474',
+    email: 'official.uone@gmail.com',
+  };
+
+  const ordererData = {
+    companyName: submission?.name_or_company || '',
+    representative: submission?.name_or_company || '',
+    businessNumber: '-',
+    address: '-',
+    contactNumber: submission?.contact || '',
+    email: submission?.email || '',
   };
 
   if (!submission) {
@@ -185,6 +215,36 @@ const DetailPage = () => {
               </button>
             </div>
           )}
+          <div className="my-10">
+            <button
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-4"
+              onClick={() => setShowQuoteModal(!showQuoteModal)}
+            >
+              {showQuoteModal ? '닫기' : '견적서 출력'}
+            </button>
+            {showQuoteModal && (
+              <OnlineQuoteGenerator
+                supplierData={supplierData}
+                ordererData={ordererData}
+                onClose={() => setShowQuoteModal(false)}
+              />
+            )}
+          </div>
+          <div className="my-10">
+            <button
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-4"
+              onClick={() => setShowTransactionModal(!showTransactionModal)}
+            >
+              {showTransactionModal ? '닫기' : '거래명세서 출력'}
+            </button>
+            {showTransactionModal && (
+              <TransactionStatementGenerator
+                supplierData={supplierData}
+                ordererData={ordererData}
+                onClose={() => setShowTransactionModal(false)}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
