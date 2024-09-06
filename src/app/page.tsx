@@ -4,6 +4,7 @@ import Auth from './components/Auth';
 import ExcelParser from './components/ExcelParser';
 import { Session, createClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
+import Link from 'next/link';
 
 export default function Home() {
   const [session, setSession] = useState<Session | null>(null);
@@ -24,17 +25,39 @@ export default function Home() {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6 text-center">
-        아크릴맛집 관리 시스템
-      </h1>
+      <div className="max-w-5xl w-full mx-auto p-4">
+        {/* 제목 */}
+        <h1 className="text-3xl font-extrabold text-center text-gray-900 mb-8">
+          아크릴 맛집 관리 시스템
+        </h1>
+      </div>
       {!session ? <Auth /> : <ExcelParser />}
+      {/* 내비게이션 */}
+      <nav className="bg-white shadow-md rounded-md">
+        <ul className="flex flex-col gap-4 p-6">
+          <li>
+            <Link
+              href="/manual-entries"
+              className="text-lg text-blue-600 hover:text-blue-700 font-medium transition duration-300"
+            >
+              수동 입력 목록
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/manual-entry"
+              className="text-lg text-blue-600 hover:text-blue-700 font-medium transition duration-300"
+            >
+              새 수동 입력
+            </Link>
+          </li>
+          {/* 네이버 폼 데이터 목록 링크 추가 가능 */}
+        </ul>
+      </nav>
     </div>
   );
 }
 
-//TODO: Detail 화면 구성하기.
-// TODO: 이미지, 문서 다운로드 받을 수 있는지 확인하기
-// TODO: 거래명세서, 견적서, 상담서 작성 구현
 //내일 을지로 가서 점검 하고 배포까지 하기
 
 // 'use client';
