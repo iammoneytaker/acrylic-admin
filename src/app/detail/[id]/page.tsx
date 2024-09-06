@@ -10,12 +10,6 @@ import dynamic from 'next/dynamic';
 const OnlineQuoteGenerator = dynamic(() => import('./OnlineQuoteGenerator'), {
   ssr: false,
 });
-const TransactionStatementGenerator = dynamic(
-  () => import('./TransactionStatementGenerator'),
-  {
-    ssr: false,
-  }
-);
 
 const LinkParser = ({ text }: any) => {
   const linkRegex = /(https?:\/\/[^\s&]+)/g;
@@ -93,7 +87,6 @@ const DetailPage = () => {
   const [consultationNotes, setConsultationNotes] = useState('');
   const [showEditor, setShowEditor] = useState(false);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
-  const [showTransactionModal, setShowTransactionModal] = useState(false);
 
   useEffect(() => {
     const fetchSubmission = async () => {
@@ -220,28 +213,13 @@ const DetailPage = () => {
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-4"
               onClick={() => setShowQuoteModal(!showQuoteModal)}
             >
-              {showQuoteModal ? '닫기' : '견적서 출력'}
+              {showQuoteModal ? '닫기' : '견적서,명세서 출력'}
             </button>
             {showQuoteModal && (
               <OnlineQuoteGenerator
                 supplierData={supplierData}
                 ordererData={ordererData}
                 onClose={() => setShowQuoteModal(false)}
-              />
-            )}
-          </div>
-          <div className="my-10">
-            <button
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-4"
-              onClick={() => setShowTransactionModal(!showTransactionModal)}
-            >
-              {showTransactionModal ? '닫기' : '거래명세서 출력'}
-            </button>
-            {showTransactionModal && (
-              <TransactionStatementGenerator
-                supplierData={supplierData}
-                ordererData={ordererData}
-                onClose={() => setShowTransactionModal(false)}
               />
             )}
           </div>

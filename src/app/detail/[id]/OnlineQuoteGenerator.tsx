@@ -59,6 +59,9 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
   const [businessNumber, setBusinessNumber] = useState<string>('');
   const [showBusinessNumber, setShowBusinessNumber] = useState<boolean>(false);
   const [savedQuoteUrl, setSavedQuoteUrl] = useState<string | null>(null);
+  const [savedStatementUrl, setSavedStatementUrl] = useState<string | null>(
+    null
+  );
 
   const addItem = () => {
     if (newItem.productName && newItem.quantity > 0 && newItem.price > 0) {
@@ -76,19 +79,34 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
 
   const generateQuote = async () => {
     const quoteElement = document.getElementById('quote-container');
-    if (quoteElement) {
-      const canvas = await html2canvas(quoteElement);
-      const imgData = canvas.toDataURL('image/png');
+    const statementElement = document.getElementById('transaction-statement');
 
-      const newWindow = window.open();
-      if (newWindow) {
-        newWindow.document.write(`<img src="${imgData}" alt="Quote" />`);
-        const downloadLink = newWindow.document.createElement('a');
-        downloadLink.href = imgData;
-        downloadLink.download = 'online_quote.png';
-        downloadLink.textContent = '견적서 다운로드';
-        newWindow.document.body.appendChild(downloadLink);
-      }
+    if (quoteElement && statementElement) {
+      const quoteCanvas = await html2canvas(quoteElement);
+      const quoteImgData = quoteCanvas.toDataURL('image/png');
+      setSavedQuoteUrl(quoteImgData);
+
+      const statementCanvas = await html2canvas(statementElement);
+      const statementImgData = statementCanvas.toDataURL('image/png');
+      setSavedStatementUrl(statementImgData);
+    }
+  };
+
+  const downloadQuote = () => {
+    if (savedQuoteUrl) {
+      const link = document.createElement('a');
+      link.href = savedQuoteUrl;
+      link.download = `${ordererData.companyName}_견적서.png`;
+      link.click();
+    }
+  };
+
+  const downloadStatement = () => {
+    if (savedStatementUrl) {
+      const link = document.createElement('a');
+      link.href = savedStatementUrl;
+      link.download = `${ordererData.companyName}_거래명세서.png`;
+      link.click();
     }
   };
 
@@ -180,8 +198,11 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                 <div>
                   <p>견적일자: {quoteDate}</p>
                   <p>
-                    견적금액: {formatNumber(calculateTotal() * 1.1)}원
-                    (부가세포함)
+                    견적금액:{' '}
+                    {formatNumber(
+                      calculateTotal() + Math.round(calculateTotal() * 0.1)
+                    )}
+                    원 (부가세포함)
                   </p>
                 </div>
               </div>
@@ -283,7 +304,11 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                 <p>공급가액: {formatNumber(calculateTotal())}원</p>
                 <p>부가세(10%): {formatNumber(calculateTotal() * 0.1)}원</p>
                 <p className="font-bold text-xl">
-                  총 금액: {formatNumber(calculateTotal() * 1.1)}원
+                  총 금액:{' '}
+                  {formatNumber(
+                    calculateTotal() + Math.round(calculateTotal() * 0.1)
+                  )}
+                  원
                 </p>
               </div>
 
@@ -299,22 +324,142 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
               <div>
                 <h4 className="font-bold mb-2">아크릴맛집 입금계좌안내</h4>
                 <p>예금주 - 윤우섭</p>
-                <p>국민은행 : 015-25-0043-448</p>
+                <p>우리은행: 1006-701-532627</p>
               </div>
             </div>
-            <button
-              onClick={generateQuote}
-              className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+            <div
+              id="transaction-statement"
+              className="bg-white p-8 shadow-lg mt-8"
             >
-              견적서 이미지 생성 및 저장
-            </button>
+              {/* 거래명세서 내용 */}
+              <div className="border-2 border-red-500 p-4">
+                <h1 className="text-2xl font-bold text-center text-red-500 mb-4">
+                  거래명세표
+                </h1>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <p>{ordererData.companyName} 귀하</p>
+                    <p>거래일: {quoteDate}</p>
+                    <p>공급가액: {formatNumber(calculateTotal())}</p>
+                    <p>세액: {formatNumber(calculateTotal() * 0.1)}</p>
+                    <p>
+                      합계금액:{' '}
+                      {formatNumber(
+                        calculateTotal() + Math.round(calculateTotal() * 0.1)
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p>등록번호: {supplierData.businessNumber}</p>
+                    <p>상호: {supplierData.companyName}</p>
+                    <p>성명: {supplierData.representative}</p>
+                    <p>사업장: {supplierData.address}</p>
+                    <p>업태: 제조업</p>
+                    <p>종목: 아크릴</p>
+                    <p>E-mail: {supplierData.email}</p>
+                  </div>
+                </div>
+                <table className="w-full border-collapse border border-gray-500">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="border border-gray-500 p-2">No</th>
+                      <th className="border border-gray-500 p-2">품목</th>
+                      <th className="border border-gray-500 p-2">규격</th>
+                      <th className="border border-gray-500 p-2">수량</th>
+                      <th className="border border-gray-500 p-2">단가</th>
+                      <th className="border border-gray-500 p-2">공급가액</th>
+                      <th className="border border-gray-500 p-2">세액</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {quoteItems.map((item, index) => (
+                      <tr key={index}>
+                        <td className="border border-gray-500 p-2 text-center">
+                          {index + 1}
+                        </td>
+                        <td className="border border-gray-500 p-2">
+                          {item.productName}
+                        </td>
+                        <td className="border border-gray-500 p-2"></td>
+                        <td className="border border-gray-500 p-2 text-right">
+                          {formatNumber(item.quantity)}
+                        </td>
+                        <td className="border border-gray-500 p-2 text-right">
+                          {formatNumber(item.price)}
+                        </td>
+                        <td className="border border-gray-500 p-2 text-right">
+                          {formatNumber(item.total)}
+                        </td>
+                        <td className="border border-gray-500 p-2 text-right">
+                          {formatNumber(item.total * 0.1)}
+                        </td>
+                      </tr>
+                    ))}
+                    {[...Array(10 - quoteItems.length)].map((_, index) => (
+                      <tr key={`empty-${index}`}>
+                        <td className="border border-gray-500 p-2">&nbsp;</td>
+                        <td className="border border-gray-500 p-2"></td>
+                        <td className="border border-gray-500 p-2"></td>
+                        <td className="border border-gray-500 p-2"></td>
+                        <td className="border border-gray-500 p-2"></td>
+                        <td className="border border-gray-500 p-2"></td>
+                        <td className="border border-gray-500 p-2"></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="mt-4">
+                  <p>
+                    합계:{' '}
+                    {formatNumber(
+                      calculateTotal() + Math.round(calculateTotal() * 0.1)
+                    )}
+                    원
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 flex justify-between">
+              <button
+                onClick={generateQuote}
+                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+              >
+                견적서 및 거래명세서 이미지 생성
+              </button>
+              <div>
+                <button
+                  onClick={downloadQuote}
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2"
+                  disabled={!savedQuoteUrl}
+                >
+                  견적서 다운로드
+                </button>
+                <button
+                  onClick={downloadStatement}
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                  disabled={!savedStatementUrl}
+                >
+                  거래명세서 다운로드
+                </button>
+              </div>
+            </div>
             {savedQuoteUrl && (
               <div className="mt-4">
                 <h3 className="font-bold">저장된 견적서</h3>
                 <img
                   src={savedQuoteUrl}
                   alt="Saved Quote"
-                  className="mt-2 max-w-full"
+                  className="mt-2 max-w-full max-h-96 object-contain"
+                />
+              </div>
+            )}
+            {savedStatementUrl && (
+              <div className="mt-4">
+                <h3 className="font-bold">저장된 거래명세서</h3>
+                <img
+                  src={savedStatementUrl}
+                  alt="Saved Statement"
+                  className="mt-2 max-w-full max-h-96 object-contain"
                 />
               </div>
             )}
