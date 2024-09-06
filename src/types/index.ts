@@ -1,6 +1,7 @@
 export interface SupabaseData {
   id?: number;
   response_date: string;
+  response_date_raw: string;
   participant_number: number;
   name_or_company: string;
   contact: string;

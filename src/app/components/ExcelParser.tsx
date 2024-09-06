@@ -47,6 +47,7 @@ const mapExcelDataToSupabase = (
 
   return {
     response_date: formatDate(excelData['응답일시'] as string),
+    response_date_raw: excelData['응답일시'] as string,
     participant_number: Number(excelData['참여자']),
     name_or_company: excelData['성함 혹은 업체명(*)'] as string,
     contact: excelData['연락처(*)'] as string,
@@ -178,13 +179,7 @@ const ExcelParser: React.FC = () => {
         }
 
         const isUpdated =
-          newItem.product_description !== existingItem.product_description ||
-          newItem.thickness !== existingItem.thickness ||
-          newItem.product_size !== existingItem.product_size ||
-          newItem.product_image?.toLowerCase() !==
-            existingItem.product_image?.toLowerCase() ||
-          newItem.business_registration_file?.toLowerCase() !==
-            existingItem.business_registration_file?.toLowerCase();
+          newItem.response_date_raw !== existingItem.response_date_raw;
 
         if (isUpdated) {
           console.log(

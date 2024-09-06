@@ -35,6 +35,7 @@ export default function Home() {
 //TODO: Detail 화면 구성하기.
 // TODO: 이미지, 문서 다운로드 받을 수 있는지 확인하기
 // TODO: 거래명세서, 견적서, 상담서 작성 구현
+//내일 을지로 가서 점검 하고 배포까지 하기
 
 // 'use client';
 
