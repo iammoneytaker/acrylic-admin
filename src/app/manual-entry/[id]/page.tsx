@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase } from '../../../lib/supabaseClient';
 import OnlineQuoteGenerator from '../../detail/[id]/OnlineQuoteGenerator';
+import Image from 'next/image';
 
 interface ManualEntryDetail {
   id: number;
@@ -149,13 +150,13 @@ const ManualEntryDetailPage: React.FC = () => {
                 href={imageUrl}
                 download={`product-image-${index + 1}.png`}
               >
-                <img
+                <Image
                   src={imageUrl}
                   alt={`Product ${index + 1}`}
+                  width={128}
+                  height={128} // 레이아웃에 맞게 크기 조정
                   className="w-32 h-32 object-cover m-2 transition-transform transform hover:scale-105 hover:shadow-lg"
-                  onError={(e) => {
-                    console.error('Error loading image:', imageUrl);
-                  }}
+                  onError={() => console.error('이미지 로드 오류:', imageUrl)}
                 />
               </a>
             ))}

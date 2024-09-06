@@ -37,9 +37,8 @@ const LinkParser = ({ text }: any) => {
     <>
       {parts.map((part: any, index: number) => {
         return (
-          <div>
+          <div key={part + index}>
             <a
-              key={part + index}
               href={part}
               target="_blank"
               rel="noopener noreferrer"
