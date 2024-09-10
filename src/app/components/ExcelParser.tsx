@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx';
 import { supabase } from '../../lib/supabaseClient';
 import { SupabaseData } from '@/types';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 interface ParsedData {
   [key: string]: string | number | { text: string; hyperlink: string } | null;
@@ -85,6 +86,8 @@ function isValidHttpUrl(string: string) {
 }
 
 const ExcelParser: React.FC = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [parsedData, setParsedData] = useState<SupabaseData[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -94,7 +97,32 @@ const ExcelParser: React.FC = () => {
 
   useEffect(() => {
     fetchDataFromSupabase();
-  }, []);
+    const storedPage = localStorage.getItem('currentPage');
+    const storedSearch = localStorage.getItem('searchTerm');
+    const urlPage = searchParams.get('page');
+    const urlSearch = searchParams.get('search');
+
+    if (urlPage) {
+      setCurrentPage(parseInt(urlPage));
+    } else if (storedPage) {
+      setCurrentPage(parseInt(storedPage));
+    }
+
+    if (urlSearch) {
+      setSearchTerm(urlSearch);
+    } else if (storedSearch) {
+      setSearchTerm(storedSearch);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    localStorage.setItem('currentPage', currentPage.toString());
+    localStorage.setItem('searchTerm', searchTerm);
+    router.push(
+      `?page=${currentPage}&search=${encodeURIComponent(searchTerm)}`,
+      { scroll: false }
+    );
+  }, [currentPage, searchTerm, router]);
 
   const fetchDataFromSupabase = async () => {
     const { data, error } = await supabase
@@ -238,75 +266,69 @@ const ExcelParser: React.FC = () => {
     currentPage * itemsPerPage
   );
 
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newSearchTerm = e.target.value;
+    setSearchTerm(newSearchTerm);
+    setCurrentPage(1); // 검색할 때마다 페이지를 1로 재설정
+    router.push(`?page=1&search=${encodeURIComponent(newSearchTerm)}`, {
+      scroll: false,
+    });
+  };
+
   return (
     <div className="container mx-auto p-4">
-      <div className="mb-4">
-        <input
-          type="file"
-          accept=".xlsx, .xls"
-          onChange={handleFileChange}
-          className="p-2 border border-gray-300 rounded"
-        />
-        <button
-          onClick={handleFileUpload}
-          className="ml-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          파일 분석
-        </button>
-        <button
-          onClick={handleDataInsert}
-          className="ml-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-        >
-          서버에 업로드
-        </button>
-      </div>
-
       <input
         type="text"
         placeholder="검색..."
         value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
+        onChange={handleSearch}
         className="mb-4 p-2 border border-gray-300 rounded w-full"
       />
 
-      <div className="mt-4 flex justify-center">
-        <button
-          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
-          className="mx-1 px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300"
-        >
-          이전
-        </button>
-        <span className="mx-4 py-2">
-          {currentPage} / {Math.ceil(filteredData.length / itemsPerPage)}
-        </span>
-        <button
-          onClick={() =>
-            setCurrentPage((prev) =>
-              Math.min(prev + 1, Math.ceil(filteredData.length / itemsPerPage))
-            )
-          }
-          disabled={
-            currentPage === Math.ceil(filteredData.length / itemsPerPage)
-          }
-          className="mx-1 px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300"
-        >
-          다음
-        </button>
+      <div className="mb-4 flex flex-col sm:flex-row items-center justify-between">
+        <div className="flex items-center">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="mx-1 px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300"
+          >
+            이전
+          </button>
+          <span className="mx-4 py-2">
+            {currentPage} / {Math.ceil(filteredData.length / itemsPerPage)}
+          </span>
+          <button
+            onClick={() =>
+              setCurrentPage((prev) =>
+                Math.min(
+                  prev + 1,
+                  Math.ceil(filteredData.length / itemsPerPage)
+                )
+              )
+            }
+            disabled={
+              currentPage === Math.ceil(filteredData.length / itemsPerPage)
+            }
+            className="mx-1 px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300"
+          >
+            다음
+          </button>
+        </div>
       </div>
 
-      {filteredData.length > 0 && (
-        <>
+      {/* PC 테이블 뷰 */}
+      <div className="hidden sm:block">
+        {filteredData.length > 0 && (
           <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
             <thead className="bg-gray-100">
               <tr>
-                <th className="px-4 py-2 text-center w-1/5 ">응답일시</th>
-                <th className="px-4 py-2 text-center w-1/5">
+                <th className="px-4 py-2 text-left">응답일시</th>
+                <th className="px-4 py-2 text-left w-1/4 whitespace-nowrap overflow-hidden text-ellipsis">
                   성함 혹은 업체명
                 </th>
-                <th className="px-4 py-2 text-center w-1/5">연락처</th>
-                <th className="px-4 py-2 text-center w-1/5">이메일</th>
-                <th className="px-4 py-2 text-center w-1/5">주문 상품</th>
+                <th className="px-4 py-2 text-left">연락처</th>
+                <th className="px-4 py-2 text-left">이메일</th>
+                <th className="px-4 py-2 text-left">주문 상품</th>
               </tr>
             </thead>
             <tbody>
@@ -315,10 +337,8 @@ const ExcelParser: React.FC = () => {
                   key={index}
                   className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}
                 >
-                  <td className="px-4 py-2 text-center">
-                    {formatDate(row.response_date)}
-                  </td>
-                  <td className="px-4 py-2 text-center">
+                  <td className="px-4 py-2">{formatDate(row.response_date)}</td>
+                  <td className="px-4 py-2">
                     <Link
                       href={`/detail/${row.id}`}
                       className="text-blue-500 hover:underline"
@@ -326,15 +346,65 @@ const ExcelParser: React.FC = () => {
                       {row.name_or_company}
                     </Link>
                   </td>
-                  <td className="px-4 py-2 text-center">{row.contact}</td>
-                  <td className="px-4 py-2 text-center">{row.email}</td>
+                  <td className="px-4 py-2">{row.contact}</td>
+                  <td className="px-4 py-2">{row.email}</td>
                   <td className="px-4 py-2">{row.product_description}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </>
-      )}
+        )}
+      </div>
+
+      {/* 모바일 카드 뷰 */}
+      <div className="sm:hidden">
+        <div className="grid grid-cols-1 gap-4">
+          {paginatedData.map((row, index) => (
+            <div key={index} className="bg-white shadow-md rounded-lg p-4">
+              <h3 className="font-bold text-lg mb-2">{row.name_or_company}</h3>
+              <p className="text-sm text-gray-600 mb-1">
+                응답일시: {formatDate(row.response_date)}
+              </p>
+              <p className="text-sm text-gray-600 mb-1">
+                연락처: {row.contact}
+              </p>
+              <p className="text-sm text-gray-600 mb-1">
+                이메일: {row.email || 'N/A'}
+              </p>
+              <p className="text-sm text-gray-600 mb-3">
+                주문 상품: {row.product_description}
+              </p>
+              <Link
+                href={`/detail/${row.id}`}
+                className="text-blue-500 hover:underline text-sm"
+              >
+                상세보기
+              </Link>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="my-20 mb-4 flex flex-col sm:flex-row items-center">
+        <input
+          type="file"
+          accept=".xlsx, .xls"
+          onChange={handleFileChange}
+          className="p-2 border border-gray-300 rounded w-full sm:w-auto mb-2 sm:mb-0"
+        />
+        <button
+          onClick={handleFileUpload}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full sm:w-auto mb-2 sm:mb-0 sm:ml-2"
+        >
+          파일 분석
+        </button>
+        <button
+          onClick={handleDataInsert}
+          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 w-full sm:w-auto sm:ml-2"
+        >
+          서버에 업로드
+        </button>
+      </div>
     </div>
   );
 };
