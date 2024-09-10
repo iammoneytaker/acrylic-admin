@@ -323,6 +323,46 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                 항목 추가
               </button>
             </div>
+            {/* 추가된 항목 목록 */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-2">추가된 항목</h3>
+              <table className="min-w-full bg-white border">
+                <thead>
+                  <tr>
+                    <th className="px-4 py-2 border">제품명</th>
+                    <th className="px-4 py-2 border">수량</th>
+                    <th className="px-4 py-2 border">단가</th>
+                    <th className="px-4 py-2 border">합계</th>
+                    <th className="px-4 py-2 border">삭제</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {quoteItems.map((item, index) => (
+                    <tr key={index}>
+                      <td className="px-4 py-2 border">{item.product_name}</td>
+                      <td className="px-4 py-2 border text-right">
+                        {formatNumber(item.quantity)}
+                      </td>
+                      <td className="px-4 py-2 border text-right">
+                        {formatNumber(item.price)}원
+                      </td>
+                      <td className="px-4 py-2 border text-right">
+                        {formatNumber(item.total)}원
+                      </td>
+                      <td className="px-4 py-2 border text-center">
+                        <button
+                          onClick={() => removeItem(item.id ?? 0)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          삭제
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* 추가된 항목 */}
             <div id="quote-container" className="bg-white p-8 shadow-lg">
               <div className="flex justify-between mb-6">
                 <h1 className="text-3xl font-bold">온라인견적서</h1>
@@ -425,14 +465,6 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                       </td>
                       <td className="px-4 py-2 border text-right">
                         {formatNumber(item.total)}원
-                      </td>
-                      <td className="px-4 py-2 border text-center">
-                        <button
-                          onClick={() => removeItem(index)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          삭제
-                        </button>
                       </td>
                     </tr>
                   ))}
