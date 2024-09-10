@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase } from '../../../lib/supabaseClient';
-import OnlineQuoteGenerator from '../../detail/[id]/OnlineQuoteGenerator';
+import OnlineQuoteGenerator from './ManualEntryQuoteGenerator';
 import Image from 'next/image';
 
 interface ManualEntryDetail {
@@ -103,6 +103,7 @@ const ManualEntryDetailPage: React.FC = () => {
     address: '-',
     contactNumber: entry.contact,
     email: '-',
+    id: entry?.id,
   };
 
   return (

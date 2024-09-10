@@ -7,9 +7,12 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import dynamic from 'next/dynamic';
 
-const OnlineQuoteGenerator = dynamic(() => import('./OnlineQuoteGenerator'), {
-  ssr: false,
-});
+const OnlineQuoteGenerator = dynamic(
+  () => import('./SubmissionQuoteGenerator'),
+  {
+    ssr: false,
+  }
+);
 
 const LinkParser = ({ text }: any) => {
   const linkRegex = /(https?:\/\/[^\s&]+)/g;
@@ -148,6 +151,7 @@ const DetailPage = () => {
     address: '-',
     contactNumber: submission?.contact || '',
     email: submission?.email || '',
+    id: submission?.id,
   };
 
   if (!submission) {

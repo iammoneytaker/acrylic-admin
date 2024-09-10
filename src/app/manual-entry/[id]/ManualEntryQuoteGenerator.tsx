@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import html2canvas from 'html2canvas';
 import { supabase } from '../../../lib/supabaseClient';
+import { debounce } from 'lodash';
 
 interface SupplierData {
   companyName: string;
@@ -13,6 +14,7 @@ interface SupplierData {
 }
 
 interface OrdererData {
+  id: number;
   companyName: string;
   representative: string;
   contactNumber: string;
@@ -20,7 +22,8 @@ interface OrdererData {
 }
 
 interface QuoteItem {
-  productName: string;
+  id?: number;
+  product_name: string;
   quantity: number;
   price: number;
   total: number;
@@ -43,7 +46,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
 }) => {
   const [quoteItems, setQuoteItems] = useState<QuoteItem[]>([]);
   const [newItem, setNewItem] = useState<Omit<QuoteItem, 'total'>>({
-    productName: '',
+    product_name: '',
     quantity: 0,
     price: 0,
   });
@@ -62,14 +65,122 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
   const [savedStatementUrl, setSavedStatementUrl] = useState<string | null>(
     null
   );
+  const [quoteDraftId, setQuoteDraftId] = useState<number | null>(null);
 
-  const addItem = () => {
-    if (newItem.productName && newItem.quantity > 0 && newItem.price > 0) {
-      setQuoteItems([
-        ...quoteItems,
-        { ...newItem, total: newItem.quantity * newItem.price },
-      ]);
-      setNewItem({ productName: '', quantity: 0, price: 0 });
+  useEffect(() => {
+    loadExistingDraft();
+  }, []);
+
+  const loadExistingDraft = async () => {
+    const { data, error } = await supabase
+      .from('quote_drafts')
+      .select('*')
+      .or(
+        `manual_entry_id.eq.${ordererData.id},manual_entry_id.eq.${ordererData.id}`
+      )
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error loading existing draft:', error);
+      return;
+    }
+
+    if (data) {
+      setQuoteDraftId(data.id);
+      setBusinessNumber(data.business_number || '');
+      setShowBusinessNumber(!!data.business_number);
+      await loadQuoteItems(data.id);
+    }
+  };
+
+  const loadQuoteItems = async (draftId: number) => {
+    const { data, error } = await supabase
+      .from('quote_draft_items')
+      .select('*')
+      .eq('quote_draft_id', draftId);
+
+    if (error) {
+      console.error('Error loading quote items:', error);
+    } else if (data) {
+      console.log(data);
+      setQuoteItems(data);
+    }
+  };
+
+  const createOrUpdateDraft = async () => {
+    if (!quoteDraftId) {
+      const { data, error } = await supabase
+        .from('quote_drafts')
+        .insert({
+          manual_entry_id: ordererData.id,
+          business_number: businessNumber,
+        })
+        .select();
+
+      if (error) {
+        console.error('Error creating quote draft:', error);
+        return null;
+      }
+      setQuoteDraftId(data[0].id);
+      return data[0].id;
+    } else {
+      const { error } = await supabase
+        .from('quote_drafts')
+        .update({ business_number: businessNumber })
+        .eq('id', quoteDraftId);
+
+      if (error) {
+        console.error('Error updating quote draft:', error);
+        return null;
+      }
+      return quoteDraftId;
+    }
+  };
+
+  const addItem = useCallback(
+    debounce(
+      async () => {
+        if (newItem.product_name && newItem.quantity > 0 && newItem.price > 0) {
+          const draftId = await createOrUpdateDraft();
+          if (!draftId) return;
+
+          const total = newItem.quantity * newItem.price;
+          const { data, error } = await supabase
+            .from('quote_draft_items')
+            .insert({
+              quote_draft_id: draftId,
+              product_name: newItem.product_name,
+              quantity: newItem.quantity,
+              price: newItem.price,
+              total: total,
+            })
+            .select();
+
+          if (error) {
+            console.error('Error adding item:', error);
+          } else if (data) {
+            setQuoteItems((prevItems) => [...prevItems, data[0]]);
+            setNewItem({ product_name: '', quantity: 0, price: 0 });
+            setShowBusinessNumber(!!businessNumber);
+          }
+        }
+      },
+      2000,
+      { leading: true, trailing: false }
+    ),
+    [newItem, businessNumber, quoteDraftId]
+  );
+
+  const removeItem = async (id: number) => {
+    const { error } = await supabase
+      .from('quote_draft_items')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error removing item:', error);
+    } else {
+      setQuoteItems(quoteItems.filter((item) => item.id !== id));
     }
   };
 
@@ -113,6 +224,26 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
   const modalContent = (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
       <div className="relative top-20 mx-auto p-5 border w-11/12 shadow-lg rounded-md bg-white">
+        <div className="absolute top-0 right-0 mt-4 mr-4">
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <svg
+              className="h-12 w-12"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
         <div className="mt-3 text-center">
           <h3 className="text-lg leading-6 font-medium text-gray-900">
             온라인 견적서 생성
@@ -143,9 +274,9 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                 </label>
                 <input
                   type="text"
-                  value={newItem.productName}
+                  value={newItem.product_name}
                   onChange={(e) =>
-                    setNewItem({ ...newItem, productName: e.target.value })
+                    setNewItem({ ...newItem, product_name: e.target.value })
                   }
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                   placeholder="제품명을 입력하세요"
@@ -285,7 +416,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                       <td className="px-4 py-2 border text-center">
                         {index + 1}
                       </td>
-                      <td className="px-4 py-2 border">{item.productName}</td>
+                      <td className="px-4 py-2 border">{item.product_name}</td>
                       <td className="px-4 py-2 border text-right">
                         {formatNumber(item.quantity)}
                       </td>
@@ -294,6 +425,14 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                       </td>
                       <td className="px-4 py-2 border text-right">
                         {formatNumber(item.total)}원
+                      </td>
+                      <td className="px-4 py-2 border text-center">
+                        <button
+                          onClick={() => removeItem(index)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          삭제
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -378,7 +517,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                           {index + 1}
                         </td>
                         <td className="border border-gray-500 p-2">
-                          {item.productName}
+                          {item.product_name}
                         </td>
                         <td className="border border-gray-500 p-2"></td>
                         <td className="border border-gray-500 p-2 text-right">
