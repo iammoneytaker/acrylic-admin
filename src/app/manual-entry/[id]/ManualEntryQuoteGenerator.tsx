@@ -67,6 +67,9 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
   );
   const [quoteDraftId, setQuoteDraftId] = useState<number | null>(null);
 
+  const [remarks, setRemarks] = useState<string>('');
+  const [editingRemarks, setEditingRemarks] = useState<boolean>(false);
+
   useEffect(() => {
     loadExistingDraft();
   }, []);
@@ -89,6 +92,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
       setQuoteDraftId(data.id);
       setBusinessNumber(data.business_number || '');
       setShowBusinessNumber(!!data.business_number);
+      setRemarks(data.remarks || '');
       await loadQuoteItems(data.id);
     }
   };
@@ -114,6 +118,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
         .insert({
           manual_entry_id: ordererData.id,
           business_number: businessNumber,
+          remarks: remarks,
         })
         .select();
 
@@ -126,7 +131,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
     } else {
       const { error } = await supabase
         .from('quote_drafts')
-        .update({ business_number: businessNumber })
+        .update({ business_number: businessNumber, remarks: remarks })
         .eq('id', quoteDraftId);
 
       if (error) {
@@ -134,6 +139,21 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
         return null;
       }
       return quoteDraftId;
+    }
+  };
+
+  const handleRemarksSave = async () => {
+    if (quoteDraftId) {
+      const { error } = await supabase
+        .from('quote_drafts')
+        .update({ remarks: remarks })
+        .eq('id', quoteDraftId);
+
+      if (error) {
+        console.error('Error updating remarks:', error);
+      } else {
+        setEditingRemarks(false);
+      }
     }
   };
 
@@ -362,6 +382,49 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                 </tbody>
               </table>
             </div>
+
+            {/* 비고 */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-2">비고</h3>
+              {editingRemarks ? (
+                <div>
+                  <textarea
+                    value={remarks}
+                    onChange={(e) => setRemarks(e.target.value)}
+                    className="w-full p-2 border rounded"
+                    rows={3}
+                  />
+                  <div className="mt-2">
+                    <button
+                      onClick={handleRemarksSave}
+                      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2"
+                    >
+                      저장
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingRemarks(false);
+                        setRemarks(remarks); // 원래 값으로 되돌리기
+                      }}
+                      className="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded"
+                    >
+                      취소
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <p className="mb-2">{remarks || '비고가 없습니다.'}</p>
+                  <button
+                    onClick={() => setEditingRemarks(true)}
+                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                  >
+                    수정
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* 추가된 항목 */}
             <div id="quote-container" className="bg-white p-8 shadow-lg">
               <div className="flex justify-between mb-6">
@@ -443,11 +506,13 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
               <table className="min-w-full bg-white border mb-6">
                 <thead>
                   <tr>
-                    <th className="px-4 py-2 border">번호</th>
-                    <th className="px-4 py-2 border">제품명</th>
+                    <th className="px-4 py-2 border">No</th>
+                    <th className="px-4 py-2 border">품목</th>
+                    <th className="px-4 py-2 border">규격</th>
                     <th className="px-4 py-2 border">수량</th>
                     <th className="px-4 py-2 border">단가</th>
-                    <th className="px-4 py-2 border">합계</th>
+                    <th className="px-4 py-2 border">공급가액</th>
+                    <th className="px-4 py-2 border">세액</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -457,6 +522,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                         {index + 1}
                       </td>
                       <td className="px-4 py-2 border">{item.product_name}</td>
+                      <td className="px-4 py-2 border"></td>
                       <td className="px-4 py-2 border text-right">
                         {formatNumber(item.quantity)}
                       </td>
@@ -466,10 +532,30 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                       <td className="px-4 py-2 border text-right">
                         {formatNumber(item.total)}원
                       </td>
+                      <td className="px-4 py-2 border text-right">
+                        {formatNumber(item.total * 0.1)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+
+              {remarks && (
+                <table className="min-w-full bg-white border mb-6">
+                  <thead>
+                    <tr>
+                      <th className="bg-gray-100 px-4 py-2 border">비고</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="px-4 py-2 border text-justify">
+                        {remarks}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              )}
 
               <div className="text-right mb-6">
                 <p>공급가액: {formatNumber(calculateTotal())}원</p>
@@ -498,11 +584,12 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                 <p>우리은행: 1006-701-532627</p>
               </div>
             </div>
+
+            {/* 거래명세서 */}
             <div
               id="transaction-statement"
               className="bg-white p-8 shadow-lg mt-8"
             >
-              {/* 거래명세서 내용 */}
               <div className="border-2 border-red-500 p-4">
                 <h1 className="text-2xl font-bold text-center text-red-500 mb-4">
                   거래명세표
@@ -579,6 +666,22 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                     ))}
                   </tbody>
                 </table>
+                {remarks && (
+                  <table className="mt-8 min-w-full bg-white border mb-6">
+                    <thead>
+                      <tr>
+                        <th className="bg-gray-100 px-4 py-2 border">비고</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td className="px-4 py-2 border text-justify">
+                          {remarks}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                )}
                 <div className="mt-4">
                   <p>
                     합계:{' '}
