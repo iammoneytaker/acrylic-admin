@@ -211,44 +211,61 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
     const statementElement = document.getElementById('transaction-statement');
 
     if (quoteElement && statementElement) {
-      const quoteCanvas = await html2canvas(quoteElement);
-      const quoteImgData = quoteCanvas.toDataURL('image/png');
-      setSavedQuoteUrl(quoteImgData);
+      try {
+        const quoteCanvas = await html2canvas(quoteElement, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+        });
+        const statementCanvas = await html2canvas(statementElement, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+        });
 
-      const statementCanvas = await html2canvas(statementElement);
-      const statementImgData = statementCanvas.toDataURL('image/png');
-      setSavedStatementUrl(statementImgData);
+        const quoteUrl = quoteCanvas.toDataURL('image/png');
+        const statementUrl = statementCanvas.toDataURL('image/png');
+
+        setSavedQuoteUrl(quoteUrl);
+        setSavedStatementUrl(statementUrl);
+      } catch (error) {
+        console.error('Error generating images:', error);
+        alert('이미지 생성 중 오류가 발생했습니다.');
+      }
     }
+  };
+
+  const downloadImage = (dataUrl: string, fileName: string) => {
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const downloadQuote = () => {
     if (savedQuoteUrl) {
-      const link = document.createElement('a');
-      link.href = savedQuoteUrl;
-      link.download = `${ordererData.companyName}_견적서.png`;
-      link.click();
+      downloadImage(savedQuoteUrl, '견적서.png');
     }
   };
 
   const downloadStatement = () => {
     if (savedStatementUrl) {
-      const link = document.createElement('a');
-      link.href = savedStatementUrl;
-      link.download = `${ordererData.companyName}_거래명세서.png`;
-      link.click();
+      downloadImage(savedStatementUrl, '거래명세서.png');
     }
   };
 
   const modalContent = (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-11/12 shadow-lg rounded-md bg-white">
+      <div className="relative top-20 mx-auto p-5 border w-full md:w-11/12 lg:w-3/4 shadow-lg rounded-md bg-white">
         <div className="absolute top-0 right-0 mt-4 mr-4">
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600"
           >
             <svg
-              className="h-12 w-12"
+              className="h-6 w-6 md:h-8 md:w-8 lg:h-12 lg:w-12"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -693,24 +710,24 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
               </div>
             </div>
 
-            <div className="mt-4 flex justify-between">
+            <div className="mt-4 flex flex-col sm:flex-row justify-between items-center">
               <button
                 onClick={generateQuote}
-                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-2 sm:mb-0 w-full sm:w-auto"
               >
                 견적서 및 거래명세서 이미지 생성
               </button>
-              <div>
+              <div className="flex flex-col sm:flex-row w-full sm:w-auto">
                 <button
                   onClick={downloadQuote}
-                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2"
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-2 sm:mb-0 sm:mr-2 w-full sm:w-auto"
                   disabled={!savedQuoteUrl}
                 >
                   견적서 다운로드
                 </button>
                 <button
                   onClick={downloadStatement}
-                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full sm:w-auto"
                   disabled={!savedStatementUrl}
                 >
                   거래명세서 다운로드
@@ -723,7 +740,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                 <img
                   src={savedQuoteUrl}
                   alt="Saved Quote"
-                  className="mt-2 max-w-full max-h-96 object-contain"
+                  className="mt-2 w-full object-contain"
                 />
               </div>
             )}
@@ -733,7 +750,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                 <img
                   src={savedStatementUrl}
                   alt="Saved Statement"
-                  className="mt-2 max-w-full max-h-96 object-contain"
+                  className="mt-2 w-full object-contain"
                 />
               </div>
             )}

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const ManualEntryPage: React.FC = () => {
   const router = useRouter();
@@ -68,37 +69,53 @@ const ManualEntryPage: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">직접 입력</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            업체 또는 이름
-          </label>
-          <input
-            type="text"
-            name="name_or_company"
-            value={formData.name_or_company}
-            onChange={handleInputChange}
-            required
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-          />
+    <div className="container mx-auto p-4 bg-gray-50 min-h-screen">
+      <div className="mb-6 flex justify-between items-center">
+        <Link
+          href="/"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out"
+        >
+          홈으로
+        </Link>
+        <h1 className="text-2xl md:text-3xl font-bold text-center text-gray-800">
+          직접 입력
+        </h1>
+        <div className="w-24"></div>
+      </div>
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-6 bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              업체 또는 이름
+            </label>
+            <input
+              type="text"
+              name="name_or_company"
+              value={formData.name_or_company}
+              onChange={handleInputChange}
+              required
+              className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              전화번호
+            </label>
+            <input
+              type="tel"
+              name="contact"
+              value={formData.contact}
+              onChange={handleInputChange}
+              required
+              className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            전화번호
-          </label>
-          <input
-            type="tel"
-            name="contact"
-            value={formData.contact}
-            onChange={handleInputChange}
-            required
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             사업자번호 (선택)
           </label>
           <input
@@ -106,11 +123,11 @@ const ManualEntryPage: React.FC = () => {
             name="business_number"
             value={formData.business_number}
             onChange={handleInputChange}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             제품
           </label>
           <input
@@ -119,11 +136,11 @@ const ManualEntryPage: React.FC = () => {
             value={formData.product}
             onChange={handleInputChange}
             required
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             만들어야 할 것
           </label>
           <textarea
@@ -131,26 +148,29 @@ const ManualEntryPage: React.FC = () => {
             value={formData.description}
             onChange={handleInputChange}
             required
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            rows={4}
+            className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             이미지 업로드
           </label>
           <input
             type="file"
             onChange={handleFileChange}
             multiple
-            className="mt-1 block w-full"
+            className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
-        <button
-          type="submit"
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        >
-          저장
-        </button>
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out"
+          >
+            저장
+          </button>
+        </div>
       </form>
     </div>
   );

@@ -27,51 +27,75 @@ const ManualEntriesListPage: React.FC = () => {
     if (error) {
       console.error('Error fetching entries:', error);
     } else {
-      console.log(data);
       setEntries(data || []);
     }
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">수동 입력 목록</h1>
-      <Link
-        href="/manual-entry"
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4 inline-block"
-      >
-        새 항목 추가
-      </Link>
-      <table className="min-w-full bg-white">
-        <thead>
-          <tr>
-            <th className="px-4 py-2 border">업체/이름</th>
-            <th className="px-4 py-2 border">연락처</th>
-            <th className="px-4 py-2 border">제품</th>
-            <th className="px-4 py-2 border">생성일</th>
-            <th className="px-4 py-2 border">actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {entries.map((entry) => (
-            <tr key={entry.id}>
-              <td className="px-4 py-2 border">{entry.name_or_company}</td>
-              <td className="px-4 py-2 border">{entry.contact}</td>
-              <td className="px-4 py-2 border">{entry.product}</td>
-              <td className="px-4 py-2 border">
-                {new Date(entry.created_at).toLocaleDateString()}
-              </td>
-              <td className="px-4 py-2 border">
-                <Link
-                  href={`/manual-entry/${entry.id}`}
-                  className="text-blue-500 hover:text-blue-700"
-                >
-                  상세보기
-                </Link>
-              </td>
+    <div className="container mx-auto p-4 bg-gray-50 min-h-screen">
+      <div className="mb-6 flex justify-between items-center">
+        <Link
+          href="/"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out"
+        >
+          홈으로
+        </Link>
+        <h1 className="text-2xl md:text-3xl font-bold text-center text-gray-800">
+          수동 입력 목록
+        </h1>
+        <Link
+          href="/manual-entry"
+          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out"
+        >
+          새 항목 추가
+        </Link>
+      </div>
+
+      <div className="overflow-x-auto bg-white shadow-md rounded-lg">
+        <table className="min-w-full">
+          <thead className="bg-gray-200">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                업체/이름
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                연락처
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                제품
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                생성일
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {entries.map((entry) => (
+              <tr key={entry.id} className="hover:bg-gray-50">
+                <td className="px-4 py-4 whitespace-nowrap">
+                  {entry.name_or_company}
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap">{entry.contact}</td>
+                <td className="px-4 py-4 whitespace-nowrap">{entry.product}</td>
+                <td className="px-4 py-4 whitespace-nowrap">
+                  {new Date(entry.created_at).toLocaleDateString()}
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap">
+                  <Link
+                    href={`/manual-entry/${entry.id}`}
+                    className="text-blue-600 hover:text-blue-900 transition duration-300 ease-in-out"
+                  >
+                    상세보기
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

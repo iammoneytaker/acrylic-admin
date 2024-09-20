@@ -6,12 +6,11 @@ import { supabase } from '../../../lib/supabaseClient';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 
 const OnlineQuoteGenerator = dynamic(
   () => import('./SubmissionQuoteGenerator'),
-  {
-    ssr: false,
-  }
+  { ssr: false }
 );
 
 const LinkParser = ({ text }: any) => {
@@ -155,21 +154,60 @@ const DetailPage = () => {
   };
 
   if (!submission) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        Loading...
+      </div>
+    );
   }
 
+  const importantFields = [
+    'name_or_company',
+    'contact',
+    'email',
+    'business_registration_file',
+    'product_description',
+    'thickness',
+    'material',
+    'product_size',
+    'color',
+    'quantity',
+    'desired_delivery',
+    'product_image',
+    'product_drawing',
+    'inquiry',
+  ];
+
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex">
-        <div className="w-1/2">
-          <h1 className="text-2xl font-bold mb-4">상세 정보</h1>
-          <div className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+    <div className="container mx-auto p-4 bg-gray-50 min-h-screen">
+      <div className="mb-6 flex justify-between items-center">
+        <Link
+          href="/"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out"
+        >
+          홈으로
+        </Link>
+        <h1 className="text-3xl font-bold text-center text-gray-800">
+          상세 정보
+        </h1>
+        <div className="w-24"></div> {/* 오른쪽 여백을 위한 빈 div */}
+      </div>
+      <div className="flex flex-col lg:flex-row space-y-6 lg:space-y-0 lg:space-x-6">
+        <div className="w-full lg:w-2/3">
+          <div className="bg-white shadow-lg rounded-lg px-8 pt-6 pb-8 mb-4">
             {Object.entries(submission).map(([key, value]) => (
-              <div key={key} className="mb-4">
+              <div
+                key={key}
+                className={`mb-4 ${
+                  importantFields.includes(key)
+                    ? 'border-l-4 border-blue-500 pl-3'
+                    : ''
+                }`}
+              >
                 <label className="block text-gray-700 text-sm font-bold mb-2">
                   {labelMap[key] || key}
                 </label>
-                <div className="text-gray-700">
+                <div className="text-gray-700 bg-gray-100 p-2 rounded">
                   {typeof value === 'string' ? (
                     <LinkParser text={value} />
                   ) : (
@@ -180,40 +218,32 @@ const DetailPage = () => {
             ))}
           </div>
         </div>
-        <div className="w-1/2 pl-8">
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-4"
-            onClick={() => setShowEditor(!showEditor)}
-          >
-            {showEditor ? '닫기' : '상담 내용 적기'}
-          </button>
-          {showEditor && (
-            <div className="bg-white shadow-md rounded px-8 pt-6 pb-8">
-              <label
-                htmlFor="consultationNotes"
-                className="block text-gray-700 text-sm font-bold mb-2"
-              >
-                상담 내용
-              </label>
-              <div className="h-64 mb-4">
-                <ReactQuill
-                  id="consultationNotes"
-                  theme="snow"
-                  value={consultationNotes}
-                  onChange={setConsultationNotes}
-                />
-              </div>
-              <button
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                onClick={saveConsultationNotes}
-              >
-                저장
-              </button>
+        <div className="w-full lg:w-1/3">
+          <div className="bg-white shadow-lg rounded-lg px-8 pt-6 pb-8 mb-4">
+            <label
+              htmlFor="consultationNotes"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
+              상담 내용
+            </label>
+            <div className="h-64 mb-4">
+              <ReactQuill
+                id="consultationNotes"
+                theme="snow"
+                value={consultationNotes}
+                onChange={setConsultationNotes}
+              />
             </div>
-          )}
-          <div className="my-10">
             <button
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-4"
+              className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full transition duration-300 ease-in-out"
+              onClick={saveConsultationNotes}
+            >
+              저장
+            </button>
+          </div>
+          <div className="mt-6">
+            <button
+              className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-4 w-full transition duration-300 ease-in-out"
               onClick={() => setShowQuoteModal(!showQuoteModal)}
             >
               {showQuoteModal ? '닫기' : '견적서,명세서 출력'}
