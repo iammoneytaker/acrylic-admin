@@ -165,6 +165,23 @@ const TasksPage = () => {
     }
   };
 
+  const deleteTodoItem = async (itemId: number) => {
+    if (window.confirm('정말로 이 항목을 삭제하시겠습니까?')) {
+      const { error } = await supabase
+        .from('todolist')
+        .delete()
+        .eq('id', itemId);
+
+      if (error) {
+        console.error('Error deleting todo item:', error);
+      } else {
+        setTodoItems((prevItems) =>
+          prevItems.filter((item) => item.id !== itemId)
+        );
+      }
+    }
+  };
+
   return (
     <div className="container mx-auto p-4 bg-gray-50 min-h-screen">
       <h1 className="text-3xl font-bold mb-6 text-gray-800">할일 목록</h1>
@@ -254,12 +271,20 @@ const TasksPage = () => {
                       statusColors[item.status as Status].border
                     }`}
                   >
-                    <Link
-                      href={getItemLink(item)}
-                      className="text-lg font-semibold text-blue-600 hover:underline"
-                    >
-                      {item.title}
-                    </Link>
+                    <div className="flex justify-between items-start">
+                      <Link
+                        href={getItemLink(item)}
+                        className="text-lg font-semibold text-blue-600 hover:underline"
+                      >
+                        {item.title}
+                      </Link>
+                      <button
+                        onClick={() => deleteTodoItem(item.id)}
+                        className="text-red-500 hover:text-red-700 transition duration-300"
+                      >
+                        삭제
+                      </button>
+                    </div>
                     <p className="text-sm text-gray-600 mt-2">
                       담당자: {item.assigned_to}
                     </p>
