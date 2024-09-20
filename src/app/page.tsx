@@ -5,7 +5,6 @@ import ExcelParser from './components/ExcelParser';
 import { Session, createClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
-
 export default function Home() {
   const [session, setSession] = useState<Session | null>(null);
 
@@ -33,7 +32,7 @@ export default function Home() {
       </div>
       {!session ? <Auth /> : <ExcelParser />}
       {/* 내비게이션 */}
-      <nav className="bg-white shadow-md rounded-md">
+      <nav className="bg-white shadow-md rounded-md mb-4">
         <ul className="flex flex-col gap-4 p-6">
           <li>
             <Link
@@ -51,7 +50,14 @@ export default function Home() {
               새 수동 입력
             </Link>
           </li>
-          {/* 네이버 폼 데이터 목록 링크 추가 가능 */}
+          <li>
+            <Link
+              href="/tasks"
+              className="text-lg text-blue-600 hover:text-blue-700 font-medium transition duration-300"
+            >
+              할일 목록
+            </Link>
+          </li>
         </ul>
       </nav>
     </div>
