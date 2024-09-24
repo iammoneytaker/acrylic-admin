@@ -12,6 +12,7 @@ interface TodoItem {
   assigned_to: string;
   due_date: string | null;
   title: string;
+  memo: string;
 }
 
 const statuses = [
@@ -63,8 +64,10 @@ const TasksPage = () => {
     assigned_to: '',
     due_date: '',
     title: '',
+    memo: '',
   });
   const [showSourceSelector, setShowSourceSelector] = useState(false);
+  const [editingMemo, setEditingMemo] = useState<number | null>(null);
 
   useEffect(() => {
     fetchTodoItems();
@@ -82,7 +85,9 @@ const TasksPage = () => {
   };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
   ) => {
     setNewItem({ ...newItem, [e.target.name]: e.target.value });
   };
@@ -108,6 +113,7 @@ const TasksPage = () => {
         assigned_to: '',
         due_date: '',
         title: '',
+        memo: '',
       });
     }
   };
@@ -182,6 +188,24 @@ const TasksPage = () => {
     }
   };
 
+  const updateMemo = async (itemId: number, newMemo: string) => {
+    const { data, error } = await supabase
+      .from('todolist')
+      .update({ memo: newMemo })
+      .eq('id', itemId);
+
+    if (error) {
+      console.error('Error updating memo:', error);
+    } else {
+      setTodoItems((prevItems) =>
+        prevItems.map((item) =>
+          item.id === itemId ? { ...item, memo: newMemo } : item
+        )
+      );
+      setEditingMemo(null);
+    }
+  };
+
   return (
     <div className="container mx-auto p-4 bg-gray-50 min-h-screen">
       <h1 className="text-3xl font-bold mb-6 text-gray-800">할일 목록</h1>
@@ -233,6 +257,16 @@ const TasksPage = () => {
               value={newItem.due_date || ''}
               onChange={handleInputChange}
               className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
+            />
+          </div>
+          <div>
+            <textarea
+              name="memo"
+              value={newItem.memo}
+              onChange={handleInputChange}
+              placeholder="메모"
+              className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-300"
+              rows={3}
             />
           </div>
         </div>
@@ -316,6 +350,52 @@ const TasksPage = () => {
                         </option>
                       ))}
                     </select>
+                    <div className="mt-2">
+                      {editingMemo === item.id ? (
+                        <div>
+                          <textarea
+                            value={item.memo}
+                            onChange={(e) => {
+                              setTodoItems((prevItems) =>
+                                prevItems.map((prevItem) =>
+                                  prevItem.id === item.id
+                                    ? { ...prevItem, memo: e.target.value }
+                                    : prevItem
+                                )
+                              );
+                            }}
+                            className="w-full p-2 border rounded text-sm"
+                            rows={3}
+                          />
+                          <div className="mt-2 flex justify-end space-x-2">
+                            <button
+                              onClick={() => updateMemo(item.id, item.memo)}
+                              className="bg-blue-500 text-white px-2 py-1 rounded text-sm"
+                            >
+                              저장
+                            </button>
+                            <button
+                              onClick={() => setEditingMemo(null)}
+                              className="bg-gray-300 text-gray-700 px-2 py-1 rounded text-sm"
+                            >
+                              취소
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-sm text-gray-600 truncate">
+                            메모: {item.memo || '(메모 없음)'}
+                          </p>
+                          <button
+                            onClick={() => setEditingMemo(item.id)}
+                            className="mt-1 text-blue-500 text-sm"
+                          >
+                            메모 편집
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
             </div>
