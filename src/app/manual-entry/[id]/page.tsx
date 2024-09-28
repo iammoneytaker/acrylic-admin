@@ -26,6 +26,8 @@ const ManualEntryDetailPage: React.FC = () => {
   const [entry, setEntry] = useState<ManualEntryDetail | null>(null);
   const [consultationNotes, setConsultationNotes] = useState('');
   const [showQuoteModal, setShowQuoteModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState<ManualEntryDetail | null>(null);
 
   useEffect(() => {
     fetchEntry();
@@ -88,6 +90,41 @@ const ManualEntryDetailPage: React.FC = () => {
     }
   };
 
+  const handleEditChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setEditForm((prev) => (prev ? { ...prev, [name]: value } : null));
+  };
+
+  const startEditing = () => {
+    setIsEditing(true);
+    setEditForm(entry);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setEditForm(null);
+  };
+
+  const saveEdit = async () => {
+    if (!editForm) return;
+
+    const { data, error } = await supabase
+      .from('manual_entries')
+      .update(editForm)
+      .eq('id', params.id);
+
+    if (error) {
+      console.error('Error updating entry:', error);
+      alert('항목 수정 중 오류가 발생했습니다.');
+    } else {
+      setEntry(editForm);
+      setIsEditing(false);
+      alert('항목이 성공적으로 수정되었습니다.');
+    }
+  };
+
   if (!entry) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -133,72 +170,189 @@ const ManualEntryDetailPage: React.FC = () => {
       <div className="flex flex-col lg:flex-row space-y-6 lg:space-y-0 lg:space-x-6">
         <div className="w-full lg:w-2/3">
           <div className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                업체/이름
-              </label>
-              <p className="text-gray-700 bg-gray-100 p-2 rounded">
-                {entry.name_or_company}
-              </p>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                연락처
-              </label>
-              <p className="text-gray-700 bg-gray-100 p-2 rounded">
-                {entry.contact}
-              </p>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                사업자번호
-              </label>
-              <p className="text-gray-700 bg-gray-100 p-2 rounded">
-                {entry.business_number || '-'}
-              </p>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                제품
-              </label>
-              <p className="text-gray-700 bg-gray-100 p-2 rounded">
-                {entry.product}
-              </p>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                설명
-              </label>
-              <p className="text-gray-700 bg-gray-100 p-2 rounded">
-                {entry.description}
-              </p>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                이미지
-              </label>
-              <div className="flex flex-wrap">
-                {entry.images.map((imageUrl, index) => (
-                  <a
-                    key={index}
-                    href={imageUrl}
-                    download={`product-image-${index + 1}.png`}
-                    className="m-2"
+            {isEditing ? (
+              <>
+                {/* 수정 모드 UI */}
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    업체/이름
+                  </label>
+                  <input
+                    type="text"
+                    name="name_or_company"
+                    value={editForm?.name_or_company || ''}
+                    onChange={handleEditChange}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    연락처
+                  </label>
+                  <input
+                    type="text"
+                    name="contact"
+                    value={editForm?.contact || ''}
+                    onChange={handleEditChange}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    사업자번호
+                  </label>
+                  <input
+                    type="text"
+                    name="business_number"
+                    value={editForm?.business_number || ''}
+                    onChange={handleEditChange}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    제품
+                  </label>
+                  <input
+                    type="text"
+                    name="product"
+                    value={editForm?.product || ''}
+                    onChange={handleEditChange}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    설명
+                  </label>
+                  <textarea
+                    name="description"
+                    value={editForm?.description || ''}
+                    onChange={handleEditChange}
+                    className="w-full p-2 border rounded"
+                    rows={4}
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    이미지
+                  </label>
+                  <div className="flex flex-wrap">
+                    {entry.images.map((imageUrl, index) => (
+                      <a
+                        key={index}
+                        href={imageUrl}
+                        download={`product-image-${index + 1}.png`}
+                        className="m-2"
+                      >
+                        <Image
+                          src={imageUrl}
+                          alt={`Product ${index + 1}`}
+                          width={128}
+                          height={128}
+                          className="w-32 h-32 object-cover rounded transition-transform transform hover:scale-105 hover:shadow-lg"
+                          onError={() =>
+                            console.error('이미지 로드 오류:', imageUrl)
+                          }
+                        />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-2 mt-4">
+                  <button
+                    onClick={saveEdit}
+                    className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
                   >
-                    <Image
-                      src={imageUrl}
-                      alt={`Product ${index + 1}`}
-                      width={128}
-                      height={128}
-                      className="w-32 h-32 object-cover rounded transition-transform transform hover:scale-105 hover:shadow-lg"
-                      onError={() =>
-                        console.error('이미지 로드 오류:', imageUrl)
-                      }
-                    />
-                  </a>
-                ))}
-              </div>
-            </div>
+                    저장
+                  </button>
+                  <button
+                    onClick={cancelEditing}
+                    className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+                  >
+                    취소
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* 기존 상세 정보 표시 UI */}
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    업체/이름
+                  </label>
+                  <p className="text-gray-700 bg-gray-100 p-2 rounded">
+                    {entry.name_or_company}
+                  </p>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    연락처
+                  </label>
+                  <p className="text-gray-700 bg-gray-100 p-2 rounded">
+                    {entry.contact}
+                  </p>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    사업자번호
+                  </label>
+                  <p className="text-gray-700 bg-gray-100 p-2 rounded">
+                    {entry.business_number || '-'}
+                  </p>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    제품
+                  </label>
+                  <p className="text-gray-700 bg-gray-100 p-2 rounded">
+                    {entry.product}
+                  </p>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    설명
+                  </label>
+                  <p className="text-gray-700 bg-gray-100 p-2 rounded">
+                    {entry.description}
+                  </p>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    이미지
+                  </label>
+                  <div className="flex flex-wrap">
+                    {entry.images.map((imageUrl, index) => (
+                      <a
+                        key={index}
+                        href={imageUrl}
+                        download={`product-image-${index + 1}.png`}
+                        className="m-2"
+                      >
+                        <Image
+                          src={imageUrl}
+                          alt={`Product ${index + 1}`}
+                          width={128}
+                          height={128}
+                          className="w-32 h-32 object-cover rounded transition-transform transform hover:scale-105 hover:shadow-lg"
+                          onError={() =>
+                            console.error('이미지 로드 오류:', imageUrl)
+                          }
+                        />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex justify-end mt-4">
+                  <button
+                    onClick={startEditing}
+                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                  >
+                    수정
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
 

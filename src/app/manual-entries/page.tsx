@@ -31,6 +31,78 @@ const ManualEntriesListPage: React.FC = () => {
     }
   };
 
+  const deleteEntry = async (id: number) => {
+    if (
+      window.confirm(
+        '이 항목을 삭제하시겠습니까? 관련된 모든 상담 내용, 견적서 초안 및 견적서 항목도 함께 삭제됩니다.'
+      )
+    ) {
+      // 먼저 관련된 manual_entry_notes 삭제
+      const { error: notesError } = await supabase
+        .from('manual_entry_notes')
+        .delete()
+        .eq('entry_id', id);
+
+      if (notesError) {
+        console.error('Error deleting related notes:', notesError);
+        alert('관련 상담 내용 삭제 중 오류가 발생했습니다.');
+        return;
+      }
+
+      // 관련된 quote_drafts의 ID들을 가져옵니다.
+      const { data: quoteDrafts, error: fetchError } = await supabase
+        .from('quote_drafts')
+        .select('id')
+        .eq('manual_entry_id', id);
+
+      if (fetchError) {
+        console.error('Error fetching quote drafts:', fetchError);
+        alert('견적서 초안 정보를 가져오는 중 오류가 발생했습니다.');
+        return;
+      }
+
+      // 각 quote_draft에 대해 관련된 quote_draft_items를 삭제합니다.
+      for (const draft of quoteDrafts) {
+        const { error: itemsError } = await supabase
+          .from('quote_draft_items')
+          .delete()
+          .eq('quote_draft_id', draft.id);
+
+        if (itemsError) {
+          console.error('Error deleting quote draft items:', itemsError);
+          alert('견적서 항목 삭제 중 오류가 발생했습니다.');
+          return;
+        }
+      }
+
+      // 이제 quote_drafts를 삭제합니다.
+      const { error: quoteDraftsError } = await supabase
+        .from('quote_drafts')
+        .delete()
+        .eq('manual_entry_id', id);
+
+      if (quoteDraftsError) {
+        console.error('Error deleting quote drafts:', quoteDraftsError);
+        alert('견적서 초안 삭제 중 오류가 발생했습니다.');
+        return;
+      }
+
+      // 마지막으로 manual_entries 항목 삭제
+      const { error } = await supabase
+        .from('manual_entries')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting entry:', error);
+        alert('항목 삭제 중 오류가 발생했습니다.');
+      } else {
+        setEntries(entries.filter((entry) => entry.id !== id));
+        alert('항목이 성공적으로 삭제되었습니다.');
+      }
+    }
+  };
+
   return (
     <div className="container mx-auto p-4 bg-gray-50 min-h-screen">
       <div className="mb-6 flex justify-between items-center">
@@ -86,10 +158,16 @@ const ManualEntriesListPage: React.FC = () => {
                 <td className="px-4 py-4 whitespace-nowrap">
                   <Link
                     href={`/manual-entry/${entry.id}`}
-                    className="text-blue-600 hover:text-blue-900 transition duration-300 ease-in-out"
+                    className="text-blue-600 hover:text-blue-900 transition duration-300 ease-in-out mr-2"
                   >
                     상세보기
                   </Link>
+                  <button
+                    onClick={() => deleteEntry(entry.id)}
+                    className="text-red-600 hover:text-red-900 transition duration-300 ease-in-out"
+                  >
+                    삭제
+                  </button>
                 </td>
               </tr>
             ))}
