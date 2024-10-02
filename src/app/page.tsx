@@ -60,6 +60,14 @@ export default function Home() {
               새 수동 입력
             </Link>
           </li>
+          <li>
+            <Link
+              href="/analytics"
+              className="text-lg text-blue-600 hover:text-blue-700 font-medium transition duration-300"
+            >
+              데이터 분석
+            </Link>
+          </li>
         </ul>
       </nav>
     </div>
