@@ -70,6 +70,12 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
   const [remarks, setRemarks] = useState<string>('');
   const [editingRemarks, setEditingRemarks] = useState<boolean>(false);
 
+  const [editingItemId, setEditingItemId] = useState<number | null>(null);
+  const [editingItem, setEditingItem] = useState<QuoteItem | null>(null);
+  const [customCompanyName, setCustomCompanyName] = useState('');
+
+  const effectiveCompanyName = customCompanyName || ordererData.companyName;
+
   useEffect(() => {
     loadExistingDraft();
   }, []);
@@ -241,6 +247,42 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
     }
   };
 
+  const startEditing = (item: QuoteItem) => {
+    setEditingItemId(item.id ?? 0);
+    setEditingItem({ ...item });
+  };
+
+  const cancelEditing = () => {
+    setEditingItemId(null);
+    setEditingItem(null);
+  };
+
+  const saveEditedItem = async () => {
+    if (editingItem && editingItemId) {
+      const updatedItem = {
+        ...editingItem,
+        total: editingItem.quantity * editingItem.price,
+      };
+
+      const { error } = await supabase
+        .from('quote_draft_items')
+        .update(updatedItem)
+        .eq('id', editingItemId);
+
+      if (error) {
+        console.error('Error updating item:', error);
+      } else {
+        setQuoteItems(
+          quoteItems.map((item) =>
+            item.id === editingItemId ? updatedItem : item
+          )
+        );
+        setEditingItemId(null);
+        setEditingItem(null);
+      }
+    }
+  };
+
   const modalContent = (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
       <div className="relative top-20 mx-auto p-5 border w-11/12 shadow-lg rounded-md bg-white">
@@ -270,6 +312,22 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
           </h3>
           <div className="mt-2 px-7 py-3">
             <div className="mb-4 space-y-2">
+              <div className="mb-4">
+                <label
+                  htmlFor="customCompanyName"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  대표자 이름 변경 (선택사항)
+                </label>
+                <input
+                  type="text"
+                  id="customCompanyName"
+                  value={customCompanyName}
+                  onChange={(e) => setCustomCompanyName(e.target.value)}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                  placeholder="변경할 대표자 이름을 입력하세요"
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
                   사업자 등록번호 (선택사항)
@@ -353,30 +411,105 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                     <th className="px-4 py-2 border">수량</th>
                     <th className="px-4 py-2 border">단가</th>
                     <th className="px-4 py-2 border">합계</th>
-                    <th className="px-4 py-2 border">삭제</th>
+                    <th className="px-4 py-2 border">작업</th>
                   </tr>
                 </thead>
                 <tbody>
                   {quoteItems.map((item, index) => (
                     <tr key={index}>
-                      <td className="px-4 py-2 border">{item.product_name}</td>
-                      <td className="px-4 py-2 border text-right">
-                        {formatNumber(item.quantity)}
-                      </td>
-                      <td className="px-4 py-2 border text-right">
-                        {formatNumber(item.price)}원
-                      </td>
-                      <td className="px-4 py-2 border text-right">
-                        {formatNumber(item.total)}원
-                      </td>
-                      <td className="px-4 py-2 border text-center">
-                        <button
-                          onClick={() => removeItem(item.id ?? 0)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          삭제
-                        </button>
-                      </td>
+                      {editingItemId === item.id ? (
+                        <>
+                          <td className="px-4 py-2 border">
+                            <input
+                              type="text"
+                              value={editingItem?.product_name}
+                              onChange={(e) =>
+                                setEditingItem({
+                                  ...editingItem!,
+                                  product_name: e.target.value,
+                                })
+                              }
+                              className="w-full p-1 border rounded"
+                            />
+                          </td>
+                          <td className="px-4 py-2 border">
+                            <input
+                              type="number"
+                              value={editingItem?.quantity}
+                              onChange={(e) =>
+                                setEditingItem({
+                                  ...editingItem!,
+                                  quantity: parseInt(e.target.value) || 0,
+                                })
+                              }
+                              className="w-full p-1 border rounded"
+                            />
+                          </td>
+                          <td className="px-4 py-2 border">
+                            <input
+                              type="number"
+                              value={editingItem?.price}
+                              onChange={(e) =>
+                                setEditingItem({
+                                  ...editingItem!,
+                                  price: parseInt(e.target.value) || 0,
+                                })
+                              }
+                              className="w-full p-1 border rounded"
+                            />
+                          </td>
+                          <td className="px-4 py-2 border text-right">
+                            {formatNumber(
+                              (editingItem?.quantity || 0) *
+                                (editingItem?.price || 0)
+                            )}
+                            원
+                          </td>
+                          <td className="px-4 py-2 border text-center">
+                            <button
+                              onClick={saveEditedItem}
+                              className="text-green-500 hover:text-green-700 mr-2"
+                            >
+                              저장
+                            </button>
+                            <button
+                              onClick={cancelEditing}
+                              className="text-gray-500 hover:text-gray-700"
+                            >
+                              취소
+                            </button>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-4 py-2 border">
+                            {item.product_name}
+                          </td>
+                          <td className="px-4 py-2 border text-right">
+                            {formatNumber(item.quantity)}
+                          </td>
+                          <td className="px-4 py-2 border text-right">
+                            {formatNumber(item.price)}원
+                          </td>
+                          <td className="px-4 py-2 border text-right">
+                            {formatNumber(item.total)}원
+                          </td>
+                          <td className="px-4 py-2 border text-center">
+                            <button
+                              onClick={() => startEditing(item)}
+                              className="text-blue-500 hover:text-blue-700 mr-2"
+                            >
+                              수정
+                            </button>
+                            <button
+                              onClick={() => removeItem(item.id ?? 0)}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              삭제
+                            </button>
+                          </td>
+                        </>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -479,9 +612,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                   <div className="p-4">
                     <div className="grid grid-cols-3 gap-2">
                       <div className="font-bold">상호명</div>
-                      <div className="col-span-2">
-                        {ordererData.companyName}
-                      </div>
+                      <div className="col-span-2">{effectiveCompanyName}</div>
                       <div className="font-bold">대표자</div>
                       <div className="col-span-2">
                         {ordererData.representative}
@@ -596,7 +727,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                 </h1>
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
-                    <p>{ordererData.companyName} 귀하</p>
+                    <p>{effectiveCompanyName} 귀하</p>
                     <p>거래일: {quoteDate}</p>
                     <p>공급가액: {formatNumber(calculateTotal())}</p>
                     <p>세액: {formatNumber(calculateTotal() * 0.1)}</p>

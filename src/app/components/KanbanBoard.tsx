@@ -20,6 +20,14 @@ interface TodoItem {
   assigned_to: string;
   due_date: string;
   name_or_company: string;
+  consultation_completed: boolean;
+  quotation_completed: boolean;
+  payment_completed: boolean;
+  in_progress: boolean;
+  tax_invoice_needed: boolean;
+  tax_invoice_completed: boolean;
+  cash_receipt_needed: boolean;
+  cash_receipt_completed: boolean;
 }
 
 const KanbanBoard: React.FC = () => {
