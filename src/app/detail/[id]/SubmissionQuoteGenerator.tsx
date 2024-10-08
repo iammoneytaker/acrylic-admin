@@ -39,6 +39,16 @@ const formatNumber = (num: number): string => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
+const formatDate = (date: Date): string => {
+  return date
+    .toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    })
+    .replace(/\. /g, '.');
+};
+
 const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
   supplierData,
   ordererData,
@@ -50,15 +60,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
     quantity: 0,
     price: 0,
   });
-  const [quoteDate, setQuoteDate] = useState<string>(
-    new Date()
-      .toLocaleDateString('ko-KR', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      })
-      .replace(/\. /g, '.')
-  );
+  const [quoteDate, setQuoteDate] = useState<string>(formatDate(new Date()));
   const [businessNumber, setBusinessNumber] = useState<string>('');
   const [showBusinessNumber, setShowBusinessNumber] = useState<boolean>(false);
   const [savedQuoteUrl, setSavedQuoteUrl] = useState<string | null>(null);
@@ -302,6 +304,11 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
 
   const effectiveCompanyName = customCompanyName || ordererData.companyName;
 
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedDate = new Date(e.target.value);
+    setQuoteDate(formatDate(selectedDate));
+  };
+
   const modalContent = (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
       <div className="relative top-20 mx-auto p-5 border w-full md:w-11/12 lg:w-3/4 shadow-lg rounded-md bg-white">
@@ -346,6 +353,23 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                   placeholder="변경할 대표자 이름을 입력하세요"
                 />
+              </div>
+              {/* 견적일자 선택 필드 수정 */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700">
+                  견적일자
+                </label>
+                <div className="flex items-center">
+                  <input
+                    type="date"
+                    value={quoteDate.split('.').reverse().join('-')}
+                    onChange={handleDateChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                  />
+                  <span className="ml-2 text-sm text-gray-600">
+                    선택된 날짜: {quoteDate}
+                  </span>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
