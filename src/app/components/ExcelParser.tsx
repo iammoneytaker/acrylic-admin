@@ -77,6 +77,7 @@ const mapExcelDataToSupabase = (
       (excelData[
         '아크릴 맛집을 어느 경로를 통해 오셨는지 알려주시면 감사하겠습니다!(*)'
       ] as string) || null,
+    checked: false,
   };
 };
 
@@ -124,11 +125,28 @@ const ExcelParser: React.FC = () => {
     );
   }, [currentPage, searchTerm, router]);
 
+  // 체크 리스트 변경
+  const handleCheckChange = async (id: number, checked: boolean) => {
+    const updatedData = parsedData.map((item) =>
+      item.id === id ? { ...item, checked } : item
+    );
+    setParsedData(updatedData);
+
+    const { data, error } = await supabase
+      .from('submissions')
+      .update({ checked })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating checked status:', error);
+    }
+  };
+
   const fetchDataFromSupabase = async () => {
     const { data, error } = await supabase
       .from('submissions')
       .select('*')
-      .order('response_date', { ascending: true });
+      .order('response_date_raw', { ascending: true });
 
     if (error) {
       console.error('Error fetching data from Supabase:', error);
@@ -225,6 +243,7 @@ const ExcelParser: React.FC = () => {
       console.log('Sample existing item:', parsedData[0]);
       console.log('Sample new item:', mappedData[0]);
       console.log('New and updated data:', newAndUpdatedData.length);
+      alert('새로운 파일에서 새로운 고객 수: ' + newAndUpdatedData.length);
       setNewData(newAndUpdatedData);
     };
     reader.readAsBinaryString(file);
@@ -322,6 +341,7 @@ const ExcelParser: React.FC = () => {
           <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
             <thead className="bg-gray-100">
               <tr>
+                <th className="px-4 py-2 text-left">체크</th>
                 <th className="px-4 py-2 text-left">응답일시</th>
                 <th className="px-4 py-2 text-left w-1/4 whitespace-nowrap overflow-hidden text-ellipsis">
                   성함 혹은 업체명
@@ -337,6 +357,16 @@ const ExcelParser: React.FC = () => {
                   key={index}
                   className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}
                 >
+                  <td className="px-4 py-2">
+                    <input
+                      type="checkbox"
+                      checked={row.checked || false}
+                      onChange={(e) =>
+                        handleCheckChange(row.id!, e.target.checked)
+                      }
+                      className="form-checkbox h-5 w-5 text-blue-600"
+                    />
+                  </td>
                   <td className="px-4 py-2">{formatDate(row.response_date)}</td>
                   <td className="px-4 py-2">
                     <Link
@@ -362,6 +392,12 @@ const ExcelParser: React.FC = () => {
           {paginatedData.map((row, index) => (
             <div key={index} className="bg-white shadow-md rounded-lg p-4">
               <h3 className="font-bold text-lg mb-2">{row.name_or_company}</h3>
+              <input
+                type="checkbox"
+                checked={row.checked || false}
+                onChange={(e) => handleCheckChange(row.id!, e.target.checked)}
+                className="form-checkbox h-5 w-5 text-blue-600"
+              />
               <p className="text-sm text-gray-600 mb-1">
                 응답일시: {formatDate(row.response_date)}
               </p>

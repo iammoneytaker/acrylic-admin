@@ -20,4 +20,5 @@ export interface SupabaseData {
   product_drawing: string | null;
   inquiry: string;
   referral_source: string | null;
+  checked: boolean;
 }

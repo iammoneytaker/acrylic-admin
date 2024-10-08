@@ -13,6 +13,14 @@ interface TodoItem {
   due_date: string | null;
   title: string;
   memo: string;
+  consultation_completed: boolean;
+  quotation_completed: boolean;
+  payment_completed: boolean;
+  in_progress: boolean;
+  tax_invoice_needed: boolean;
+  tax_invoice_completed: boolean;
+  cash_receipt_needed: boolean;
+  cash_receipt_completed: boolean;
 }
 
 const statuses = [
@@ -65,6 +73,14 @@ const TasksPage = () => {
     due_date: '',
     title: '',
     memo: '',
+    consultation_completed: false,
+    quotation_completed: false,
+    payment_completed: false,
+    in_progress: false,
+    tax_invoice_needed: false,
+    tax_invoice_completed: false,
+    cash_receipt_needed: false,
+    cash_receipt_completed: false,
   });
   const [showSourceSelector, setShowSourceSelector] = useState(false);
   const [editingMemo, setEditingMemo] = useState<number | null>(null);
@@ -114,6 +130,14 @@ const TasksPage = () => {
         due_date: '',
         title: '',
         memo: '',
+        consultation_completed: false,
+        quotation_completed: false,
+        payment_completed: false,
+        in_progress: false,
+        tax_invoice_needed: false,
+        tax_invoice_completed: false,
+        cash_receipt_needed: false,
+        cash_receipt_completed: false,
       });
     }
   };
@@ -206,6 +230,27 @@ const TasksPage = () => {
     }
   };
 
+  const updateCheckbox = async (
+    itemId: number,
+    field: string,
+    value: boolean
+  ) => {
+    const { data, error } = await supabase
+      .from('todolist')
+      .update({ [field]: value })
+      .eq('id', itemId);
+
+    if (error) {
+      console.error(`Error updating ${field}:`, error);
+    } else {
+      setTodoItems((prevItems) =>
+        prevItems.map((item) =>
+          item.id === itemId ? { ...item, [field]: value } : item
+        )
+      );
+    }
+  };
+
   return (
     <div className="container mx-auto p-4 bg-gray-50 min-h-screen">
       <h1 className="text-3xl font-bold mb-6 text-gray-800">할일 목록</h1>
@@ -287,7 +332,7 @@ const TasksPage = () => {
 
       <div className="flex overflow-x-auto pb-4 space-x-4">
         {statuses.map((status) => (
-          <div key={status} className="flex-shrink-0 w-80">
+          <div key={status} className="flex-shrink-0 w-96">
             <h2
               className={`font-bold mb-4 p-2 rounded ${
                 statusColors[status as Status].bg
@@ -395,6 +440,155 @@ const TasksPage = () => {
                           </button>
                         </div>
                       )}
+                    </div>
+
+                    <div className="mt-4 space-y-4">
+                      {/* 진행 상태 세트 */}
+                      <div className="bg-blue-50 p-3 rounded-md">
+                        <h4 className="font-semibold text-blue-700 mb-2">
+                          진행 상태
+                        </h4>
+                        <div className="grid grid-cols-2 gap-2">
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={item.consultation_completed}
+                              onChange={(e) =>
+                                updateCheckbox(
+                                  item.id,
+                                  'consultation_completed',
+                                  e.target.checked
+                                )
+                              }
+                              className="mr-2"
+                            />
+                            <span className="text-sm">상담완료</span>
+                          </label>
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={item.quotation_completed}
+                              onChange={(e) =>
+                                updateCheckbox(
+                                  item.id,
+                                  'quotation_completed',
+                                  e.target.checked
+                                )
+                              }
+                              className="mr-2"
+                            />
+                            <span className="text-sm">견적완료</span>
+                          </label>
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={item.payment_completed}
+                              onChange={(e) =>
+                                updateCheckbox(
+                                  item.id,
+                                  'payment_completed',
+                                  e.target.checked
+                                )
+                              }
+                              className="mr-2"
+                            />
+                            <span className="text-sm">입금완료</span>
+                          </label>
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={item.in_progress}
+                              onChange={(e) =>
+                                updateCheckbox(
+                                  item.id,
+                                  'in_progress',
+                                  e.target.checked
+                                )
+                              }
+                              className="mr-2"
+                            />
+                            <span className="text-sm">진행</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* 세금계산서 세트 */}
+                      <div className="bg-green-50 p-3 rounded-md">
+                        <h4 className="font-semibold text-green-700 mb-2">
+                          세금계산서
+                        </h4>
+                        <div className="space-y-2">
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={item.tax_invoice_needed}
+                              onChange={(e) =>
+                                updateCheckbox(
+                                  item.id,
+                                  'tax_invoice_needed',
+                                  e.target.checked
+                                )
+                              }
+                              className="mr-2"
+                            />
+                            <span className="text-sm">세금계산서 필요</span>
+                          </label>
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={item.tax_invoice_completed}
+                              onChange={(e) =>
+                                updateCheckbox(
+                                  item.id,
+                                  'tax_invoice_completed',
+                                  e.target.checked
+                                )
+                              }
+                              className="mr-2"
+                            />
+                            <span className="text-sm">세금계산서 완료</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* 현금영수증 세트 */}
+                      <div className="bg-yellow-50 p-3 rounded-md">
+                        <h4 className="font-semibold text-yellow-700 mb-2">
+                          현금영수증
+                        </h4>
+                        <div className="space-y-2">
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={item.cash_receipt_needed}
+                              onChange={(e) =>
+                                updateCheckbox(
+                                  item.id,
+                                  'cash_receipt_needed',
+                                  e.target.checked
+                                )
+                              }
+                              className="mr-2"
+                            />
+                            <span className="text-sm">현금영수증 필요</span>
+                          </label>
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={item.cash_receipt_completed}
+                              onChange={(e) =>
+                                updateCheckbox(
+                                  item.id,
+                                  'cash_receipt_completed',
+                                  e.target.checked
+                                )
+                              }
+                              className="mr-2"
+                            />
+                            <span className="text-sm">현금영수증 완료</span>
+                          </label>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}
