@@ -21,6 +21,11 @@ interface TodoItem {
   tax_invoice_completed: boolean;
   cash_receipt_needed: boolean;
   cash_receipt_completed: boolean;
+  tax_invoice_not_required: boolean;
+  cash_receipt_not_required: boolean;
+  delivery_method_courier: boolean;
+  delivery_method_quick: boolean;
+  delivery_method_visit: boolean;
 }
 
 const statuses = [
@@ -81,12 +86,55 @@ const TasksPage = () => {
     tax_invoice_completed: false,
     cash_receipt_needed: false,
     cash_receipt_completed: false,
+    tax_invoice_not_required: false,
+    cash_receipt_not_required: false,
+    delivery_method_courier: false,
+    delivery_method_quick: false,
+    delivery_method_visit: false,
   });
   const [showSourceSelector, setShowSourceSelector] = useState(false);
   const [editingMemo, setEditingMemo] = useState<number | null>(null);
   const [expandedItems, setExpandedItems] = useState<number[]>([]);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [maxScroll, setMaxScroll] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+    }
+  };
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (scrollContainerRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } =
+          scrollContainerRef.current;
+        setScrollPosition(scrollLeft);
+        setMaxScroll(scrollWidth - clientWidth);
+      }
+    };
+
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+      // 초기 maxScroll 설정
+      setMaxScroll(container.scrollWidth - container.clientWidth);
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     fetchTodoItems();
@@ -105,6 +153,14 @@ const TasksPage = () => {
 
     return () => window.removeEventListener('resize', checkForOverflow);
   }, []);
+
+  useEffect(() => {
+    // 초기에 '제작완료'가 아닌 모든 항목을 펼친 상태로 설정
+    const initialExpandedItems = todoItems
+      .filter((item) => item.status !== '제작완료')
+      .map((item) => item.id);
+    setExpandedItems(initialExpandedItems);
+  }, [todoItems]);
 
   const fetchTodoItems = async () => {
     const { data, error } = await supabase
@@ -155,6 +211,11 @@ const TasksPage = () => {
         tax_invoice_completed: false,
         cash_receipt_needed: false,
         cash_receipt_completed: false,
+        tax_invoice_not_required: false,
+        cash_receipt_not_required: false,
+        delivery_method_courier: false,
+        delivery_method_quick: false,
+        delivery_method_visit: false,
       });
     }
   };
@@ -276,6 +337,10 @@ const TasksPage = () => {
     );
   };
 
+  const isItemExpanded = (item: TodoItem) => {
+    return expandedItems.includes(item.id);
+  };
+
   return (
     <div className="container mx-auto p-4 bg-gray-50 min-h-screen">
       <h1 className="text-3xl font-bold mb-6 text-gray-800">할일 목록</h1>
@@ -355,295 +420,404 @@ const TasksPage = () => {
         />
       )}
 
-      {showScrollIndicator && (
-        <div className="mb-2 text-sm text-gray-500">
-          ← 오른쪽으로 스크롤하여 더 많은 내용을 확인하세요 →
+      <div className="relative">
+        <div className="mb-4 flex items-center justify-between">
+          <button
+            onClick={scrollLeft}
+            className="bg-white p-2 rounded-full shadow-md text-gray-600 hover:bg-gray-100"
+            disabled={scrollPosition <= 0}
+          >
+            ◀
+          </button>
+          <div className="text-sm text-gray-500">
+            좌우로 스크롤하여 더 많은 내용을 확인하세요
+          </div>
+          <button
+            onClick={scrollRight}
+            className="bg-white p-2 rounded-full shadow-md text-gray-600 hover:bg-gray-100"
+            disabled={scrollPosition >= maxScroll}
+          >
+            ▶
+          </button>
         </div>
-      )}
-      <div
-        ref={scrollContainerRef}
-        className="overflow-x-auto"
-        style={{
-          scrollbarWidth: 'thin',
-          scrollbarColor: '#CBD5E0 #EDF2F7',
-        }}
-      >
-        <div className="flex space-x-4 min-w-max">
-          {statuses.map((status) => (
-            <div key={status} className="flex-shrink-0 w-96">
-              <h2
-                className={`font-bold mb-4 p-2 rounded ${
-                  statusColors[status as Status].bg
-                } ${statusColors[status as Status].text}`}
-              >
-                {status}
-              </h2>
-              <div className="space-y-4">
-                {todoItems
-                  .filter((item) => item.status === status)
-                  .map((item) => (
-                    <div
-                      key={item.id}
-                      className={`bg-white p-4 rounded-lg shadow-md border-l-4 ${
-                        statusColors[item.status as Status].border
-                      }`}
-                    >
-                      <div className="flex justify-between items-start">
-                        <Link
-                          href={getItemLink(item)}
-                          className="text-lg font-semibold text-blue-600 hover:underline"
-                        >
-                          {item.title}
-                        </Link>
-                        <button
-                          onClick={() => deleteTodoItem(item.id)}
-                          className="text-red-500 hover:text-red-700 transition duration-300"
-                        >
-                          삭제
-                        </button>
-                      </div>
-                      <p className="text-sm text-gray-600 mt-2">
-                        담당자: {item.assigned_to}
-                      </p>
-                      <div className="flex items-center mt-2">
-                        <input
-                          type="date"
-                          value={item.due_date || ''}
-                          onChange={(e) =>
-                            updateDueDate(item.id, e.target.value || null)
-                          }
-                          className="text-sm text-gray-500 border rounded p-1 mr-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                        />
-                        <span className="text-sm text-gray-500">
-                          {item.due_date
-                            ? new Date(item.due_date).toLocaleDateString()
-                            : '마감일 없음'}
-                        </span>
-                      </div>
-                      <select
-                        value={item.status}
-                        onChange={(e) => updateStatus(item.id, e.target.value)}
-                        className={`mt-3 w-full p-2 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-300 ${
-                          statusColors[item.status as Status].text
-                        } ${statusColors[item.status as Status].bg}`}
+        <div
+          ref={scrollContainerRef}
+          className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+        >
+          <div className="flex space-x-4 min-w-max">
+            {statuses.map((status) => (
+              <div key={status} className="flex-shrink-0 w-96">
+                <h2
+                  className={`font-bold mb-4 p-2 rounded ${
+                    statusColors[status as Status].bg
+                  } ${statusColors[status as Status].text}`}
+                >
+                  {status}
+                </h2>
+                <div className="space-y-4">
+                  {todoItems
+                    .filter((item) => item.status === status)
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        className={`bg-white p-4 rounded-lg shadow-md border-l-4 ${
+                          statusColors[item.status as Status].border
+                        }`}
                       >
-                        {statuses.map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="mt-2">
-                        {editingMemo === item.id ? (
+                        <div className="flex justify-between items-center">
+                          <h3 className="font-semibold">{item.title}</h3>
                           <div>
-                            <textarea
-                              value={item.memo}
-                              onChange={(e) => {
-                                setTodoItems((prevItems) =>
-                                  prevItems.map((prevItem) =>
-                                    prevItem.id === item.id
-                                      ? { ...prevItem, memo: e.target.value }
-                                      : prevItem
-                                  )
-                                );
-                              }}
-                              className="w-full p-2 border rounded text-sm"
-                              rows={3}
-                            />
-                            <div className="mt-2 flex justify-end space-x-2">
-                              <button
-                                onClick={() => updateMemo(item.id, item.memo)}
-                                className="bg-blue-500 text-white px-2 py-1 rounded text-sm"
-                              >
-                                저장
-                              </button>
-                              <button
-                                onClick={() => setEditingMemo(null)}
-                                className="bg-gray-300 text-gray-700 px-2 py-1 rounded text-sm"
-                              >
-                                취소
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div>
-                            <p className="text-sm text-gray-600 truncate">
-                              메모: {item.memo || '(메모 없음)'}
-                            </p>
                             <button
-                              onClick={() => setEditingMemo(item.id)}
-                              className="mt-1 text-blue-500 text-sm"
+                              onClick={() => toggleItem(item.id)}
+                              className="text-blue-500 hover:text-blue-700 mr-2"
                             >
-                              메모 편집
+                              {isItemExpanded(item) ? '접기' : '펼치기'}
                             </button>
+                            <button
+                              onClick={() => deleteTodoItem(item.id)}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              삭제
+                            </button>
+                          </div>
+                        </div>
+
+                        {isItemExpanded(item) && (
+                          <div className="mt-2 space-y-4">
+                            <div className="flex items-center mt-2">
+                              <input
+                                type="date"
+                                value={item.due_date || ''}
+                                onChange={(e) =>
+                                  updateDueDate(item.id, e.target.value || null)
+                                }
+                                className="text-sm text-gray-500 border rounded p-1 mr-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                              />
+                              <span className="text-sm text-gray-500">
+                                {item.due_date
+                                  ? new Date(item.due_date).toLocaleDateString()
+                                  : '마감일 없음'}
+                              </span>
+                            </div>
+                            <select
+                              value={item.status}
+                              onChange={(e) =>
+                                updateStatus(item.id, e.target.value)
+                              }
+                              className={`mt-3 w-full p-2 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-300 ${
+                                statusColors[item.status as Status].text
+                              } ${statusColors[item.status as Status].bg}`}
+                            >
+                              {statuses.map((s) => (
+                                <option key={s} value={s}>
+                                  {s}
+                                </option>
+                              ))}
+                            </select>
+                            <div className="mt-2">
+                              {editingMemo === item.id ? (
+                                <div>
+                                  <textarea
+                                    value={item.memo}
+                                    onChange={(e) => {
+                                      setTodoItems((prevItems) =>
+                                        prevItems.map((prevItem) =>
+                                          prevItem.id === item.id
+                                            ? {
+                                                ...prevItem,
+                                                memo: e.target.value,
+                                              }
+                                            : prevItem
+                                        )
+                                      );
+                                    }}
+                                    className="w-full p-2 border rounded text-sm"
+                                    rows={3}
+                                  />
+                                  <div className="mt-2 flex justify-end space-x-2">
+                                    <button
+                                      onClick={() =>
+                                        updateMemo(item.id, item.memo)
+                                      }
+                                      className="bg-blue-500 text-white px-2 py-1 rounded text-sm"
+                                    >
+                                      저장
+                                    </button>
+                                    <button
+                                      onClick={() => setEditingMemo(null)}
+                                      className="bg-gray-300 text-gray-700 px-2 py-1 rounded text-sm"
+                                    >
+                                      취소
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div>
+                                  <p className="text-sm text-gray-600 truncate">
+                                    메모: {item.memo || '(메모 없음)'}
+                                  </p>
+                                  <button
+                                    onClick={() => setEditingMemo(item.id)}
+                                    className="mt-1 text-blue-500 text-sm"
+                                  >
+                                    메모 편집
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="mt-2 space-y-4">
+                              {/* 진행 상태 세트 */}
+                              <div className="bg-blue-50 p-3 rounded-md">
+                                <h4 className="font-semibold text-blue-700 mb-2">
+                                  진행 상태
+                                </h4>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <label className="flex items-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={item.consultation_completed}
+                                      onChange={(e) =>
+                                        updateCheckbox(
+                                          item.id,
+                                          'consultation_completed',
+                                          e.target.checked
+                                        )
+                                      }
+                                      className="mr-2"
+                                    />
+                                    <span className="text-sm">상담완료</span>
+                                  </label>
+                                  <label className="flex items-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={item.quotation_completed}
+                                      onChange={(e) =>
+                                        updateCheckbox(
+                                          item.id,
+                                          'quotation_completed',
+                                          e.target.checked
+                                        )
+                                      }
+                                      className="mr-2"
+                                    />
+                                    <span className="text-sm">견적완료</span>
+                                  </label>
+                                  <label className="flex items-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={item.payment_completed}
+                                      onChange={(e) =>
+                                        updateCheckbox(
+                                          item.id,
+                                          'payment_completed',
+                                          e.target.checked
+                                        )
+                                      }
+                                      className="mr-2"
+                                    />
+                                    <span className="text-sm">입금완료</span>
+                                  </label>
+                                  <label className="flex items-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={item.in_progress}
+                                      onChange={(e) =>
+                                        updateCheckbox(
+                                          item.id,
+                                          'in_progress',
+                                          e.target.checked
+                                        )
+                                      }
+                                      className="mr-2"
+                                    />
+                                    <span className="text-sm">진행</span>
+                                  </label>
+                                </div>
+                              </div>
+
+                              {/* 세금계산서 세트 */}
+                              <div className="bg-green-50 p-3 rounded-md">
+                                <h4 className="font-semibold text-green-700 mb-2">
+                                  세금계산서
+                                </h4>
+                                <div className="space-y-2">
+                                  <label className="flex items-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={item.tax_invoice_needed}
+                                      onChange={(e) =>
+                                        updateCheckbox(
+                                          item.id,
+                                          'tax_invoice_needed',
+                                          e.target.checked
+                                        )
+                                      }
+                                      className="mr-2"
+                                    />
+                                    <span className="text-sm">
+                                      세금계산서 필요
+                                    </span>
+                                  </label>
+                                  <label className="flex items-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={item.tax_invoice_completed}
+                                      onChange={(e) =>
+                                        updateCheckbox(
+                                          item.id,
+                                          'tax_invoice_completed',
+                                          e.target.checked
+                                        )
+                                      }
+                                      className="mr-2"
+                                    />
+                                    <span className="text-sm">
+                                      세금계산서 완료
+                                    </span>
+                                  </label>
+                                  <label className="flex items-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={item.tax_invoice_not_required}
+                                      onChange={(e) =>
+                                        updateCheckbox(
+                                          item.id,
+                                          'tax_invoice_not_required',
+                                          e.target.checked
+                                        )
+                                      }
+                                      className="mr-2"
+                                    />
+                                    <span className="text-sm">
+                                      세금계산서 안함
+                                    </span>
+                                  </label>
+                                </div>
+                              </div>
+
+                              {/* 현금영수증 세트 */}
+                              <div className="bg-yellow-50 p-3 rounded-md">
+                                <h4 className="font-semibold text-yellow-700 mb-2">
+                                  현금영수증
+                                </h4>
+                                <div className="space-y-2">
+                                  <label className="flex items-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={item.cash_receipt_needed}
+                                      onChange={(e) =>
+                                        updateCheckbox(
+                                          item.id,
+                                          'cash_receipt_needed',
+                                          e.target.checked
+                                        )
+                                      }
+                                      className="mr-2"
+                                    />
+                                    <span className="text-sm">
+                                      현금영수증 필요
+                                    </span>
+                                  </label>
+                                  <label className="flex items-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={item.cash_receipt_completed}
+                                      onChange={(e) =>
+                                        updateCheckbox(
+                                          item.id,
+                                          'cash_receipt_completed',
+                                          e.target.checked
+                                        )
+                                      }
+                                      className="mr-2"
+                                    />
+                                    <span className="text-sm">
+                                      현금영수증 완료
+                                    </span>
+                                  </label>
+                                  <label className="flex items-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={item.cash_receipt_not_required}
+                                      onChange={(e) =>
+                                        updateCheckbox(
+                                          item.id,
+                                          'cash_receipt_not_required',
+                                          e.target.checked
+                                        )
+                                      }
+                                      className="mr-2"
+                                    />
+                                    <span className="text-sm">
+                                      현금영수증 안함
+                                    </span>
+                                  </label>
+                                </div>
+                              </div>
+
+                              {/* 배송방식 세트 */}
+                              <div className="bg-purple-50 p-3 rounded-md">
+                                <h4 className="font-semibold text-purple-700 mb-2">
+                                  배송방식
+                                </h4>
+                                <div className="space-y-2">
+                                  <label className="flex items-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={item.delivery_method_courier}
+                                      onChange={(e) =>
+                                        updateCheckbox(
+                                          item.id,
+                                          'delivery_method_courier',
+                                          e.target.checked
+                                        )
+                                      }
+                                      className="mr-2"
+                                    />
+                                    <span className="text-sm">택배</span>
+                                  </label>
+                                  <label className="flex items-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={item.delivery_method_quick}
+                                      onChange={(e) =>
+                                        updateCheckbox(
+                                          item.id,
+                                          'delivery_method_quick',
+                                          e.target.checked
+                                        )
+                                      }
+                                      className="mr-2"
+                                    />
+                                    <span className="text-sm">퀵</span>
+                                  </label>
+                                  <label className="flex items-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={item.delivery_method_visit}
+                                      onChange={(e) =>
+                                        updateCheckbox(
+                                          item.id,
+                                          'delivery_method_visit',
+                                          e.target.checked
+                                        )
+                                      }
+                                      className="mr-2"
+                                    />
+                                    <span className="text-sm">직접 방문</span>
+                                  </label>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>
-
-                      <button
-                        onClick={() => toggleItem(item.id)}
-                        className="mt-2 w-full text-left flex justify-between items-center bg-gray-100 p-2 rounded-md"
-                      >
-                        <span className="font-semibold">상세 정보</span>
-                        <span>
-                          {expandedItems.includes(item.id) ? '▲' : '▼'}
-                        </span>
-                      </button>
-                      {expandedItems.includes(item.id) && (
-                        <div className="mt-2 space-y-4">
-                          {/* 진행 상태 세트 */}
-                          <div className="bg-blue-50 p-3 rounded-md">
-                            <h4 className="font-semibold text-blue-700 mb-2">
-                              진행 상태
-                            </h4>
-                            <div className="grid grid-cols-2 gap-2">
-                              <label className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={item.consultation_completed}
-                                  onChange={(e) =>
-                                    updateCheckbox(
-                                      item.id,
-                                      'consultation_completed',
-                                      e.target.checked
-                                    )
-                                  }
-                                  className="mr-2"
-                                />
-                                <span className="text-sm">상담완료</span>
-                              </label>
-                              <label className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={item.quotation_completed}
-                                  onChange={(e) =>
-                                    updateCheckbox(
-                                      item.id,
-                                      'quotation_completed',
-                                      e.target.checked
-                                    )
-                                  }
-                                  className="mr-2"
-                                />
-                                <span className="text-sm">견적완료</span>
-                              </label>
-                              <label className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={item.payment_completed}
-                                  onChange={(e) =>
-                                    updateCheckbox(
-                                      item.id,
-                                      'payment_completed',
-                                      e.target.checked
-                                    )
-                                  }
-                                  className="mr-2"
-                                />
-                                <span className="text-sm">입금완료</span>
-                              </label>
-                              <label className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={item.in_progress}
-                                  onChange={(e) =>
-                                    updateCheckbox(
-                                      item.id,
-                                      'in_progress',
-                                      e.target.checked
-                                    )
-                                  }
-                                  className="mr-2"
-                                />
-                                <span className="text-sm">진행</span>
-                              </label>
-                            </div>
-                          </div>
-
-                          {/* 세금계산서 세트 */}
-                          <div className="bg-green-50 p-3 rounded-md">
-                            <h4 className="font-semibold text-green-700 mb-2">
-                              세금계산서
-                            </h4>
-                            <div className="space-y-2">
-                              <label className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={item.tax_invoice_needed}
-                                  onChange={(e) =>
-                                    updateCheckbox(
-                                      item.id,
-                                      'tax_invoice_needed',
-                                      e.target.checked
-                                    )
-                                  }
-                                  className="mr-2"
-                                />
-                                <span className="text-sm">세금계산서 필요</span>
-                              </label>
-                              <label className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={item.tax_invoice_completed}
-                                  onChange={(e) =>
-                                    updateCheckbox(
-                                      item.id,
-                                      'tax_invoice_completed',
-                                      e.target.checked
-                                    )
-                                  }
-                                  className="mr-2"
-                                />
-                                <span className="text-sm">세금계산서 완료</span>
-                              </label>
-                            </div>
-                          </div>
-
-                          {/* 현금영수증 세트 */}
-                          <div className="bg-yellow-50 p-3 rounded-md">
-                            <h4 className="font-semibold text-yellow-700 mb-2">
-                              현금영수증
-                            </h4>
-                            <div className="space-y-2">
-                              <label className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={item.cash_receipt_needed}
-                                  onChange={(e) =>
-                                    updateCheckbox(
-                                      item.id,
-                                      'cash_receipt_needed',
-                                      e.target.checked
-                                    )
-                                  }
-                                  className="mr-2"
-                                />
-                                <span className="text-sm">현금영수증 필요</span>
-                              </label>
-                              <label className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={item.cash_receipt_completed}
-                                  onChange={(e) =>
-                                    updateCheckbox(
-                                      item.id,
-                                      'cash_receipt_completed',
-                                      e.target.checked
-                                    )
-                                  }
-                                  className="mr-2"
-                                />
-                                <span className="text-sm">현금영수증 완료</span>
-                              </label>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    ))}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>
