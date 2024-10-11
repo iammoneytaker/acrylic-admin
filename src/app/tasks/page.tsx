@@ -427,10 +427,12 @@ const TasksPage = () => {
       </form>
 
       {showSourceSelector && (
-        <SourceSelector
-          onSelect={handleSourceSelect}
-          onClose={() => setShowSourceSelector(false)}
-        />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <SourceSelector
+            onSelect={handleSourceSelect}
+            onClose={() => setShowSourceSelector(false)}
+          />
+        </div>
       )}
 
       <div className="relative">
@@ -478,7 +480,12 @@ const TasksPage = () => {
                         }`}
                       >
                         <div className="flex justify-between items-center">
-                          <h3 className="font-semibold">{item.title}</h3>
+                          <Link
+                            href={getItemLink(item)}
+                            className="text-lg font-semibold text-blue-600 hover:underline"
+                          >
+                            {item.title}
+                          </Link>
                           <div>
                             <button
                               onClick={() => toggleItem(item.id)}
