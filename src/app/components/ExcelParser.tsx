@@ -276,10 +276,11 @@ const ExcelParser: React.FC = () => {
         item.name_or_company.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.product_description
           .toLowerCase()
-          .includes(searchTerm.toLowerCase())
+          .includes(searchTerm.toLowerCase()) ||
+        item.contact.includes(searchTerm)
     )
     .reverse();
-
+  console.log(searchTerm);
   const paginatedData = filteredData.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
