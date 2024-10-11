@@ -7,7 +7,8 @@ interface ManualEntry {
   id: number;
   name_or_company: string;
   contact: string;
-  product: string;
+  business_number: string;
+  memo: string;
   created_at: string;
 }
 
@@ -134,9 +135,6 @@ const ManualEntriesListPage: React.FC = () => {
                 연락처
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                제품
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 생성일
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -151,7 +149,6 @@ const ManualEntriesListPage: React.FC = () => {
                   {entry.name_or_company}
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">{entry.contact}</td>
-                <td className="px-4 py-4 whitespace-nowrap">{entry.product}</td>
                 <td className="px-4 py-4 whitespace-nowrap">
                   {new Date(entry.created_at).toLocaleDateString()}
                 </td>

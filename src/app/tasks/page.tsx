@@ -95,6 +95,7 @@ const TasksPage = () => {
   const [showSourceSelector, setShowSourceSelector] = useState(false);
   const [editingMemo, setEditingMemo] = useState<number | null>(null);
   const [expandedItems, setExpandedItems] = useState<number[]>([]);
+  const [expandedDetails, setExpandedDetails] = useState<number[]>([]);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [maxScroll, setMaxScroll] = useState(0);
@@ -337,8 +338,20 @@ const TasksPage = () => {
     );
   };
 
-  const isItemExpanded = (item: TodoItem) => {
-    return expandedItems.includes(item.id);
+  const toggleDetails = (itemId: number) => {
+    setExpandedDetails((prev) =>
+      prev.includes(itemId)
+        ? prev.filter((id) => id !== itemId)
+        : [...prev, itemId]
+    );
+  };
+
+  const isItemExpanded = (itemId: number) => {
+    return expandedItems.includes(itemId);
+  };
+
+  const areDetailsExpanded = (itemId: number) => {
+    return expandedDetails.includes(itemId);
   };
 
   return (
@@ -471,7 +484,7 @@ const TasksPage = () => {
                               onClick={() => toggleItem(item.id)}
                               className="text-blue-500 hover:text-blue-700 mr-2"
                             >
-                              {isItemExpanded(item) ? '접기' : '펼치기'}
+                              {isItemExpanded(item.id) ? '접기' : '펼치기'}
                             </button>
                             <button
                               onClick={() => deleteTodoItem(item.id)}
@@ -482,7 +495,7 @@ const TasksPage = () => {
                           </div>
                         </div>
 
-                        {isItemExpanded(item) && (
+                        {isItemExpanded(item.id) && (
                           <div className="mt-2 space-y-4">
                             <div className="flex items-center mt-2">
                               <input
@@ -566,249 +579,276 @@ const TasksPage = () => {
                               )}
                             </div>
 
-                            <div className="mt-2 space-y-4">
-                              {/* 진행 상태 세트 */}
-                              <div className="bg-blue-50 p-3 rounded-md">
-                                <h4 className="font-semibold text-blue-700 mb-2">
-                                  진행 상태
-                                </h4>
-                                <div className="grid grid-cols-2 gap-2">
-                                  <label className="flex items-center">
-                                    <input
-                                      type="checkbox"
-                                      checked={item.consultation_completed}
-                                      onChange={(e) =>
-                                        updateCheckbox(
-                                          item.id,
-                                          'consultation_completed',
-                                          e.target.checked
-                                        )
-                                      }
-                                      className="mr-2"
-                                    />
-                                    <span className="text-sm">상담완료</span>
-                                  </label>
-                                  <label className="flex items-center">
-                                    <input
-                                      type="checkbox"
-                                      checked={item.quotation_completed}
-                                      onChange={(e) =>
-                                        updateCheckbox(
-                                          item.id,
-                                          'quotation_completed',
-                                          e.target.checked
-                                        )
-                                      }
-                                      className="mr-2"
-                                    />
-                                    <span className="text-sm">견적완료</span>
-                                  </label>
-                                  <label className="flex items-center">
-                                    <input
-                                      type="checkbox"
-                                      checked={item.payment_completed}
-                                      onChange={(e) =>
-                                        updateCheckbox(
-                                          item.id,
-                                          'payment_completed',
-                                          e.target.checked
-                                        )
-                                      }
-                                      className="mr-2"
-                                    />
-                                    <span className="text-sm">입금완료</span>
-                                  </label>
-                                  <label className="flex items-center">
-                                    <input
-                                      type="checkbox"
-                                      checked={item.in_progress}
-                                      onChange={(e) =>
-                                        updateCheckbox(
-                                          item.id,
-                                          'in_progress',
-                                          e.target.checked
-                                        )
-                                      }
-                                      className="mr-2"
-                                    />
-                                    <span className="text-sm">진행</span>
-                                  </label>
-                                </div>
-                              </div>
+                            {/* 세부 정보 아코디언 */}
+                            <div className="bg-gray-100 p-3 rounded-md">
+                              <button
+                                onClick={() => toggleDetails(item.id)}
+                                className="w-full text-left flex justify-between items-center"
+                              >
+                                <span className="font-semibold">세부 정보</span>
+                                <span>
+                                  {areDetailsExpanded(item.id) ? '▲' : '▼'}
+                                </span>
+                              </button>
 
-                              {/* 세금계산서 세트 */}
-                              <div className="bg-green-50 p-3 rounded-md">
-                                <h4 className="font-semibold text-green-700 mb-2">
-                                  세금계산서
-                                </h4>
-                                <div className="space-y-2">
-                                  <label className="flex items-center">
-                                    <input
-                                      type="checkbox"
-                                      checked={item.tax_invoice_needed}
-                                      onChange={(e) =>
-                                        updateCheckbox(
-                                          item.id,
-                                          'tax_invoice_needed',
-                                          e.target.checked
-                                        )
-                                      }
-                                      className="mr-2"
-                                    />
-                                    <span className="text-sm">
-                                      세금계산서 필요
-                                    </span>
-                                  </label>
-                                  <label className="flex items-center">
-                                    <input
-                                      type="checkbox"
-                                      checked={item.tax_invoice_completed}
-                                      onChange={(e) =>
-                                        updateCheckbox(
-                                          item.id,
-                                          'tax_invoice_completed',
-                                          e.target.checked
-                                        )
-                                      }
-                                      className="mr-2"
-                                    />
-                                    <span className="text-sm">
-                                      세금계산서 완료
-                                    </span>
-                                  </label>
-                                  <label className="flex items-center">
-                                    <input
-                                      type="checkbox"
-                                      checked={item.tax_invoice_not_required}
-                                      onChange={(e) =>
-                                        updateCheckbox(
-                                          item.id,
-                                          'tax_invoice_not_required',
-                                          e.target.checked
-                                        )
-                                      }
-                                      className="mr-2"
-                                    />
-                                    <span className="text-sm">
-                                      세금계산서 안함
-                                    </span>
-                                  </label>
-                                </div>
-                              </div>
+                              {areDetailsExpanded(item.id) && (
+                                <div className="mt-2 space-y-4">
+                                  {/* 진행 상태 세트 */}
+                                  <div className="bg-blue-50 p-3 rounded-md">
+                                    <h4 className="font-semibold text-blue-700 mb-2">
+                                      진행 상태
+                                    </h4>
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <label className="flex items-center">
+                                        <input
+                                          type="checkbox"
+                                          checked={item.consultation_completed}
+                                          onChange={(e) =>
+                                            updateCheckbox(
+                                              item.id,
+                                              'consultation_completed',
+                                              e.target.checked
+                                            )
+                                          }
+                                          className="mr-2"
+                                        />
+                                        <span className="text-sm">
+                                          상담완료
+                                        </span>
+                                      </label>
+                                      <label className="flex items-center">
+                                        <input
+                                          type="checkbox"
+                                          checked={item.quotation_completed}
+                                          onChange={(e) =>
+                                            updateCheckbox(
+                                              item.id,
+                                              'quotation_completed',
+                                              e.target.checked
+                                            )
+                                          }
+                                          className="mr-2"
+                                        />
+                                        <span className="text-sm">
+                                          견적완료
+                                        </span>
+                                      </label>
+                                      <label className="flex items-center">
+                                        <input
+                                          type="checkbox"
+                                          checked={item.payment_completed}
+                                          onChange={(e) =>
+                                            updateCheckbox(
+                                              item.id,
+                                              'payment_completed',
+                                              e.target.checked
+                                            )
+                                          }
+                                          className="mr-2"
+                                        />
+                                        <span className="text-sm">
+                                          입금완료
+                                        </span>
+                                      </label>
+                                      <label className="flex items-center">
+                                        <input
+                                          type="checkbox"
+                                          checked={item.in_progress}
+                                          onChange={(e) =>
+                                            updateCheckbox(
+                                              item.id,
+                                              'in_progress',
+                                              e.target.checked
+                                            )
+                                          }
+                                          className="mr-2"
+                                        />
+                                        <span className="text-sm">진행</span>
+                                      </label>
+                                    </div>
+                                  </div>
 
-                              {/* 현금영수증 세트 */}
-                              <div className="bg-yellow-50 p-3 rounded-md">
-                                <h4 className="font-semibold text-yellow-700 mb-2">
-                                  현금영수증
-                                </h4>
-                                <div className="space-y-2">
-                                  <label className="flex items-center">
-                                    <input
-                                      type="checkbox"
-                                      checked={item.cash_receipt_needed}
-                                      onChange={(e) =>
-                                        updateCheckbox(
-                                          item.id,
-                                          'cash_receipt_needed',
-                                          e.target.checked
-                                        )
-                                      }
-                                      className="mr-2"
-                                    />
-                                    <span className="text-sm">
-                                      현금영수증 필요
-                                    </span>
-                                  </label>
-                                  <label className="flex items-center">
-                                    <input
-                                      type="checkbox"
-                                      checked={item.cash_receipt_completed}
-                                      onChange={(e) =>
-                                        updateCheckbox(
-                                          item.id,
-                                          'cash_receipt_completed',
-                                          e.target.checked
-                                        )
-                                      }
-                                      className="mr-2"
-                                    />
-                                    <span className="text-sm">
-                                      현금영수증 완료
-                                    </span>
-                                  </label>
-                                  <label className="flex items-center">
-                                    <input
-                                      type="checkbox"
-                                      checked={item.cash_receipt_not_required}
-                                      onChange={(e) =>
-                                        updateCheckbox(
-                                          item.id,
-                                          'cash_receipt_not_required',
-                                          e.target.checked
-                                        )
-                                      }
-                                      className="mr-2"
-                                    />
-                                    <span className="text-sm">
-                                      현금영수증 안함
-                                    </span>
-                                  </label>
-                                </div>
-                              </div>
+                                  {/* 세금계산서 세트 */}
+                                  <div className="bg-green-50 p-3 rounded-md">
+                                    <h4 className="font-semibold text-green-700 mb-2">
+                                      세금계산서
+                                    </h4>
+                                    <div className="space-y-2">
+                                      <label className="flex items-center">
+                                        <input
+                                          type="checkbox"
+                                          checked={item.tax_invoice_needed}
+                                          onChange={(e) =>
+                                            updateCheckbox(
+                                              item.id,
+                                              'tax_invoice_needed',
+                                              e.target.checked
+                                            )
+                                          }
+                                          className="mr-2"
+                                        />
+                                        <span className="text-sm">
+                                          세금계산서 필요
+                                        </span>
+                                      </label>
+                                      <label className="flex items-center">
+                                        <input
+                                          type="checkbox"
+                                          checked={item.tax_invoice_completed}
+                                          onChange={(e) =>
+                                            updateCheckbox(
+                                              item.id,
+                                              'tax_invoice_completed',
+                                              e.target.checked
+                                            )
+                                          }
+                                          className="mr-2"
+                                        />
+                                        <span className="text-sm">
+                                          세금계산서 완료
+                                        </span>
+                                      </label>
+                                      <label className="flex items-center">
+                                        <input
+                                          type="checkbox"
+                                          checked={
+                                            item.tax_invoice_not_required
+                                          }
+                                          onChange={(e) =>
+                                            updateCheckbox(
+                                              item.id,
+                                              'tax_invoice_not_required',
+                                              e.target.checked
+                                            )
+                                          }
+                                          className="mr-2"
+                                        />
+                                        <span className="text-sm">
+                                          세금계산서 안함
+                                        </span>
+                                      </label>
+                                    </div>
+                                  </div>
 
-                              {/* 배송방식 세트 */}
-                              <div className="bg-purple-50 p-3 rounded-md">
-                                <h4 className="font-semibold text-purple-700 mb-2">
-                                  배송방식
-                                </h4>
-                                <div className="space-y-2">
-                                  <label className="flex items-center">
-                                    <input
-                                      type="checkbox"
-                                      checked={item.delivery_method_courier}
-                                      onChange={(e) =>
-                                        updateCheckbox(
-                                          item.id,
-                                          'delivery_method_courier',
-                                          e.target.checked
-                                        )
-                                      }
-                                      className="mr-2"
-                                    />
-                                    <span className="text-sm">택배</span>
-                                  </label>
-                                  <label className="flex items-center">
-                                    <input
-                                      type="checkbox"
-                                      checked={item.delivery_method_quick}
-                                      onChange={(e) =>
-                                        updateCheckbox(
-                                          item.id,
-                                          'delivery_method_quick',
-                                          e.target.checked
-                                        )
-                                      }
-                                      className="mr-2"
-                                    />
-                                    <span className="text-sm">퀵</span>
-                                  </label>
-                                  <label className="flex items-center">
-                                    <input
-                                      type="checkbox"
-                                      checked={item.delivery_method_visit}
-                                      onChange={(e) =>
-                                        updateCheckbox(
-                                          item.id,
-                                          'delivery_method_visit',
-                                          e.target.checked
-                                        )
-                                      }
-                                      className="mr-2"
-                                    />
-                                    <span className="text-sm">직접 방문</span>
-                                  </label>
+                                  {/* 현금영수증 세트 */}
+                                  <div className="bg-yellow-50 p-3 rounded-md">
+                                    <h4 className="font-semibold text-yellow-700 mb-2">
+                                      현금영수증
+                                    </h4>
+                                    <div className="space-y-2">
+                                      <label className="flex items-center">
+                                        <input
+                                          type="checkbox"
+                                          checked={item.cash_receipt_needed}
+                                          onChange={(e) =>
+                                            updateCheckbox(
+                                              item.id,
+                                              'cash_receipt_needed',
+                                              e.target.checked
+                                            )
+                                          }
+                                          className="mr-2"
+                                        />
+                                        <span className="text-sm">
+                                          현금영수증 필요
+                                        </span>
+                                      </label>
+                                      <label className="flex items-center">
+                                        <input
+                                          type="checkbox"
+                                          checked={item.cash_receipt_completed}
+                                          onChange={(e) =>
+                                            updateCheckbox(
+                                              item.id,
+                                              'cash_receipt_completed',
+                                              e.target.checked
+                                            )
+                                          }
+                                          className="mr-2"
+                                        />
+                                        <span className="text-sm">
+                                          현금영수증 완료
+                                        </span>
+                                      </label>
+                                      <label className="flex items-center">
+                                        <input
+                                          type="checkbox"
+                                          checked={
+                                            item.cash_receipt_not_required
+                                          }
+                                          onChange={(e) =>
+                                            updateCheckbox(
+                                              item.id,
+                                              'cash_receipt_not_required',
+                                              e.target.checked
+                                            )
+                                          }
+                                          className="mr-2"
+                                        />
+                                        <span className="text-sm">
+                                          현금영수증 안함
+                                        </span>
+                                      </label>
+                                    </div>
+                                  </div>
+
+                                  {/* 배송방식 세트 */}
+                                  <div className="bg-purple-50 p-3 rounded-md">
+                                    <h4 className="font-semibold text-purple-700 mb-2">
+                                      배송방식
+                                    </h4>
+                                    <div className="space-y-2">
+                                      <label className="flex items-center">
+                                        <input
+                                          type="checkbox"
+                                          checked={item.delivery_method_courier}
+                                          onChange={(e) =>
+                                            updateCheckbox(
+                                              item.id,
+                                              'delivery_method_courier',
+                                              e.target.checked
+                                            )
+                                          }
+                                          className="mr-2"
+                                        />
+                                        <span className="text-sm">택배</span>
+                                      </label>
+                                      <label className="flex items-center">
+                                        <input
+                                          type="checkbox"
+                                          checked={item.delivery_method_quick}
+                                          onChange={(e) =>
+                                            updateCheckbox(
+                                              item.id,
+                                              'delivery_method_quick',
+                                              e.target.checked
+                                            )
+                                          }
+                                          className="mr-2"
+                                        />
+                                        <span className="text-sm">퀵</span>
+                                      </label>
+                                      <label className="flex items-center">
+                                        <input
+                                          type="checkbox"
+                                          checked={item.delivery_method_visit}
+                                          onChange={(e) =>
+                                            updateCheckbox(
+                                              item.id,
+                                              'delivery_method_visit',
+                                              e.target.checked
+                                            )
+                                          }
+                                          className="mr-2"
+                                        />
+                                        <span className="text-sm">
+                                          직접 방문
+                                        </span>
+                                      </label>
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
+                              )}
                             </div>
                           </div>
                         )}

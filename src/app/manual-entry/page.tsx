@@ -10,9 +10,9 @@ const ManualEntryPage: React.FC = () => {
     name_or_company: '',
     contact: '',
     business_number: '',
-    product: '',
-    description: '',
+    memo: '',
     images: [] as File[],
+    email: '',
   });
 
   const handleInputChange = (
@@ -128,27 +128,25 @@ const ManualEntryPage: React.FC = () => {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            제품
+            메모 (선택)
           </label>
-          <input
-            type="text"
-            name="product"
-            value={formData.product}
+          <textarea
+            name="memo"
+            value={formData.memo}
             onChange={handleInputChange}
-            required
+            rows={4}
             className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            만들어야 할 것
+            이메일 (선택)
           </label>
-          <textarea
-            name="description"
-            value={formData.description}
+          <input
+            type="email"
+            name="email"
+            value={formData.email}
             onChange={handleInputChange}
-            required
-            rows={4}
             className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>

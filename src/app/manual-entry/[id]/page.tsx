@@ -15,8 +15,8 @@ interface ManualEntryDetail {
   name_or_company: string;
   contact: string;
   business_number: string;
-  product: string;
-  description: string;
+  memo: string;
+  email: string;
   images: string[];
   created_at: string;
 }
@@ -148,7 +148,7 @@ const ManualEntryDetailPage: React.FC = () => {
     businessNumber: entry.business_number,
     address: '-',
     contactNumber: entry.contact,
-    email: '-',
+    email: entry.email ?? '-',
     id: entry?.id,
   };
 
@@ -211,26 +211,26 @@ const ManualEntryDetailPage: React.FC = () => {
                 </div>
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
-                    제품
+                    메모
                   </label>
-                  <input
-                    type="text"
-                    name="product"
-                    value={editForm?.product || ''}
+                  <textarea
+                    name="memo"
+                    value={editForm?.memo || ''}
                     onChange={handleEditChange}
                     className="w-full p-2 border rounded"
+                    rows={4}
                   />
                 </div>
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
-                    설명
+                    이메일
                   </label>
-                  <textarea
-                    name="description"
-                    value={editForm?.description || ''}
+                  <input
+                    type="email"
+                    name="email"
+                    value={editForm?.email || ''}
                     onChange={handleEditChange}
                     className="w-full p-2 border rounded"
-                    rows={4}
                   />
                 </div>
                 <div className="mb-4">
@@ -303,18 +303,18 @@ const ManualEntryDetailPage: React.FC = () => {
                 </div>
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
-                    제품
+                    메모
                   </label>
                   <p className="text-gray-700 bg-gray-100 p-2 rounded">
-                    {entry.product}
+                    {entry.memo || '-'}
                   </p>
                 </div>
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
-                    설명
+                    이메일
                   </label>
                   <p className="text-gray-700 bg-gray-100 p-2 rounded">
-                    {entry.description}
+                    {entry.email || '-'}
                   </p>
                 </div>
                 <div className="mb-4">
