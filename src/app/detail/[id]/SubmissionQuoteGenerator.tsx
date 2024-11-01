@@ -696,7 +696,6 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                         {index + 1}
                       </td>
                       <td className="px-4 py-2 border">{item.product_name}</td>
-                      <td className="px-4 py-2 border"></td>
                       <td className="px-4 py-2 border text-right">
                         {formatNumber(item.quantity)}
                       </td>
@@ -811,7 +810,6 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                         <td className="border border-gray-500 p-2">
                           {item.product_name}
                         </td>
-                        <td className="border border-gray-500 p-2"></td>
                         <td className="border border-gray-500 p-2 text-right">
                           {formatNumber(item.quantity)}
                         </td>
@@ -829,7 +827,6 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                     {[...Array(10 - quoteItems.length)].map((_, index) => (
                       <tr key={`empty-${index}`}>
                         <td className="border border-gray-500 p-2">&nbsp;</td>
-                        <td className="border border-gray-500 p-2"></td>
                         <td className="border border-gray-500 p-2"></td>
                         <td className="border border-gray-500 p-2"></td>
                         <td className="border border-gray-500 p-2"></td>
