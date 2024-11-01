@@ -683,7 +683,6 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                   <tr>
                     <th className="px-4 py-2 border">No</th>
                     <th className="px-4 py-2 border">품목</th>
-                    <th className="px-4 py-2 border">규격</th>
                     <th className="px-4 py-2 border">수량</th>
                     <th className="px-4 py-2 border">단가</th>
                     <th className="px-4 py-2 border">공급가액</th>
@@ -797,7 +796,6 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                     <tr className="bg-gray-100">
                       <th className="border border-gray-500 p-2">No</th>
                       <th className="border border-gray-500 p-2">품목</th>
-                      <th className="border border-gray-500 p-2">규격</th>
                       <th className="border border-gray-500 p-2">수량</th>
                       <th className="border border-gray-500 p-2">단가</th>
                       <th className="border border-gray-500 p-2">공급가액</th>
