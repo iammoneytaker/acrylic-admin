@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { SupabaseData } from '@/types';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import ExcelUploadModal from './ExcelUploadModal';
 
 interface ParsedData {
   [key: string]: string | number | { text: string; hyperlink: string } | null;
@@ -95,6 +96,8 @@ const ExcelParser: React.FC = () => {
   const [newData, setNewData] = useState<SupabaseData[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const itemsPerPage = 10;
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
     fetchDataFromSupabase();
@@ -162,91 +165,91 @@ const ExcelParser: React.FC = () => {
     }
   };
 
-  const handleFileUpload = async () => {
-    if (!file) {
-      alert('파일을 선택해주세요.');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      const bstr = evt.target?.result;
-      const wb = XLSX.read(bstr, { type: 'binary' });
-      const wsname = wb.SheetNames[0];
-      const ws = wb.Sheets[wsname];
-      const data = XLSX.utils.sheet_to_json<ParsedData>(ws, {
-        raw: false,
-        defval: null,
-      });
-
-      // console.log('Raw Excel data:', data);
-
-      const mappedData = data.map((row, index) => {
-        // 각 행에 대한 하이퍼링크 추출
-        const rowHyperlinks: { [key: string]: string } = {};
-        Object.keys(ws).forEach((cell) => {
-          if (ws[cell].l) {
-            const cellAddress = XLSX.utils.decode_cell(cell);
-            if (cellAddress.r === index + 1) {
-              const header = Object.keys(row)[cellAddress.c];
-              rowHyperlinks[header] = ws[cell].l.Target;
-            }
-          }
+  const handleFileUpload = async (file: File) => {
+    setIsAnalyzing(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json<ParsedData>(ws, {
+          raw: false,
+          defval: null,
         });
 
-        // console.log(`Row ${index + 1} hyperlinks:`, rowHyperlinks);
-        // console.log(`Row ${index + 1} data:`, row);
+        // console.log('Raw Excel data:', data);
 
-        const mappedRow = mapExcelDataToSupabase(row, rowHyperlinks);
-        console.log(`Mapped row ${index + 1}:`, mappedRow);
+        const mappedData = data.map((row, index) => {
+          // 각 행에 대한 하이퍼링크 추출
+          const rowHyperlinks: { [key: string]: string } = {};
+          Object.keys(ws).forEach((cell) => {
+            if (ws[cell].l) {
+              const cellAddress = XLSX.utils.decode_cell(cell);
+              if (cellAddress.r === index + 1) {
+                const header = Object.keys(row)[cellAddress.c];
+                rowHyperlinks[header] = ws[cell].l.Target;
+              }
+            }
+          });
 
-        return mappedRow;
-      });
+          // console.log(`Row ${index + 1} hyperlinks:`, rowHyperlinks);
+          // console.log(`Row ${index + 1} data:`, row);
 
-      console.log(mappedData);
+          const mappedRow = mapExcelDataToSupabase(row, rowHyperlinks);
+          console.log(`Mapped row ${index + 1}:`, mappedRow);
 
-      const existingDataMap = new Map(
-        parsedData.map((item) => [
-          `${formatDate(item.response_date)}-${item.participant_number}`,
-          item,
-        ])
-      );
-      console.log(existingDataMap);
+          return mappedRow;
+        });
 
-      const newAndUpdatedData = mappedData.filter((newItem) => {
-        const key = `${formatDate(newItem.response_date)}-${
-          newItem.participant_number
-        }`;
-        const existingItem = existingDataMap.get(key);
+        console.log(mappedData);
 
-        if (!existingItem) {
-          console.log('New item:', newItem);
-          return true; // 새로운 데이터
-        }
+        const existingDataMap = new Map(
+          parsedData.map((item) => [
+            `${formatDate(item.response_date)}-${item.participant_number}`,
+            item,
+          ])
+        );
+        console.log(existingDataMap);
 
-        const isUpdated =
-          newItem.response_date_raw !== existingItem.response_date_raw;
+        const newAndUpdatedData = mappedData.filter((newItem) => {
+          const key = `${formatDate(newItem.response_date)}-${
+            newItem.participant_number
+          }`;
+          const existingItem = existingDataMap.get(key);
 
-        if (isUpdated) {
-          console.log(
-            newItem.product_image?.toLowerCase() !==
-              existingItem.product_image?.toLowerCase()
-          );
-          console.log('Updated item:', newItem);
-          console.log('exist item:', existingItem);
-        }
-        return isUpdated;
-      });
+          if (!existingItem) {
+            console.log('New item:', newItem);
+            return true; // 새로운 데이터
+          }
 
-      console.log('Total rows in Excel:', mappedData.length);
-      console.log('Existing data in parsedData:', parsedData.length);
-      console.log('Sample existing item:', parsedData[0]);
-      console.log('Sample new item:', mappedData[0]);
-      console.log('New and updated data:', newAndUpdatedData.length);
-      alert('새로운 파일에서 새로운 고객 수: ' + newAndUpdatedData.length);
-      setNewData(newAndUpdatedData);
-    };
-    reader.readAsBinaryString(file);
+          const isUpdated =
+            newItem.response_date_raw !== existingItem.response_date_raw;
+
+          if (isUpdated) {
+            console.log(
+              newItem.product_image?.toLowerCase() !==
+                existingItem.product_image?.toLowerCase()
+            );
+            console.log('Updated item:', newItem);
+            console.log('exist item:', existingItem);
+          }
+          return isUpdated;
+        });
+
+        console.log('Total rows in Excel:', mappedData.length);
+        console.log('Existing data in parsedData:', parsedData.length);
+        console.log('Sample existing item:', parsedData[0]);
+        console.log('Sample new item:', mappedData[0]);
+        console.log('New and updated data:', newAndUpdatedData.length);
+        alert('새로운 파일에서 새로운 고객 수: ' + newAndUpdatedData.length);
+        setNewData(newAndUpdatedData);
+      };
+      reader.readAsBinaryString(file);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleDataInsert = async () => {
@@ -422,26 +425,37 @@ const ExcelParser: React.FC = () => {
         </div>
       </div>
 
-      <div className="my-20 mb-4 flex flex-col sm:flex-row items-center">
-        <input
-          type="file"
-          accept=".xlsx, .xls"
-          onChange={handleFileChange}
-          className="p-2 border border-gray-300 rounded w-full sm:w-auto mb-2 sm:mb-0"
-        />
+      {/* 파일 업로드 버튼 */}
+      <div className="fixed bottom-4 right-4">
         <button
-          onClick={handleFileUpload}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full sm:w-auto mb-2 sm:mb-0 sm:ml-2"
+          onClick={() => setIsModalOpen(true)}
+          className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-4 shadow-lg"
         >
-          파일 분석
-        </button>
-        <button
-          onClick={handleDataInsert}
-          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 w-full sm:w-auto sm:ml-2"
-        >
-          서버에 업로드
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
         </button>
       </div>
+
+      {/* 업로드 모달 */}
+      <ExcelUploadModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onFileUpload={handleFileUpload}
+        newData={newData}
+        isAnalyzing={isAnalyzing}
+        onDataInsert={handleDataInsert}
+      />
     </div>
   );
 };
