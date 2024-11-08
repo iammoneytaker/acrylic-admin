@@ -91,10 +91,20 @@ const ExcelParser: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [parsedData, setParsedData] = useState<SupabaseData[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const storedPage = localStorage.getItem('currentPage');
+      return storedPage ? parseInt(storedPage) : 1;
+    }
+    return 1;
+  });
+  const [searchTerm, setSearchTerm] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('searchTerm') || '';
+    }
+    return '';
+  });
   const [newData, setNewData] = useState<SupabaseData[]>([]);
-  const [file, setFile] = useState<File | null>(null);
   const itemsPerPage = 10;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -122,11 +132,33 @@ const ExcelParser: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('currentPage', currentPage.toString());
     localStorage.setItem('searchTerm', searchTerm);
+
     router.push(
       `?page=${currentPage}&search=${encodeURIComponent(searchTerm)}`,
       { scroll: false }
     );
   }, [currentPage, searchTerm, router]);
+
+  // useEffect(() => {
+  //   const handleRouteChange = () => {
+  //     const storedPage = localStorage.getItem('currentPage') || '1';
+  //     const storedSearch = localStorage.getItem('searchTerm') || '';
+
+  //     if (window.location.pathname === '/') {
+  //       router.push(
+  //         `?page=${storedPage}&search=${encodeURIComponent(storedSearch)}`,
+  //         { scroll: false }
+  //       );
+  //     }
+  //   };
+
+  //   window.addEventListener('popstate', handleRouteChange);
+  //   handleRouteChange();
+
+  //   return () => {
+  //     window.removeEventListener('popstate', handleRouteChange);
+  //   };
+  // }, [router]);
 
   // 체크 리스트 변경
   const handleCheckChange = async (id: number, checked: boolean) => {
@@ -156,12 +188,6 @@ const ExcelParser: React.FC = () => {
     } else {
       console.log('Fetched data from Supabase:', data);
       setParsedData(data || []);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFile(e.target.files[0]);
     }
   };
 
