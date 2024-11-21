@@ -675,7 +675,6 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                         {index + 1}
                       </td>
                       <td className="px-4 py-2 border">{item.product_name}</td>
-                      <td className="px-4 py-2 border"></td>
                       <td className="px-4 py-2 border text-right">
                         {formatNumber(item.quantity)}
                       </td>
