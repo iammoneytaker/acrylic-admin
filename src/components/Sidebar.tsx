@@ -16,6 +16,7 @@ const Sidebar = () => {
     { href: '/manual-entries', label: '수동 입력 목록', icon: '📝' },
     { href: '/manual-entry', label: '새 수동 입력', icon: '➕' },
     { href: '/analytics', label: '데이터 분석', icon: '📊' },
+    { href: '/contracts', label: '계약서 만들기', icon: '📄' },
   ];
 
   const handleLogout = async () => {

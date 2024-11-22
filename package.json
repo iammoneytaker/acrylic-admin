@@ -9,9 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.1.4",
     "@supabase/supabase-js": "^2.45.3",
     "chart.js": "^4.4.4",
     "html2canvas": "^1.4.1",
+    "jspdf": "^2.5.2",
     "lodash": "^4.17.21",
     "next": "14.2.7",
     "react": "^18",
