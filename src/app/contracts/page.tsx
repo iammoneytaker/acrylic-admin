@@ -112,6 +112,7 @@ const ContractsPage: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4 bg-gray-50 min-h-screen">
+
       <div className="mb-6 flex justify-between items-center">
         <Link
           href="/"
@@ -225,23 +226,22 @@ const ContractsPage: React.FC = () => {
               style={{ fontSize: '10pt' }}
             >
               {/* 워터마크 로고 */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="relative w-[80%] h-[80%]">
-                  <Image
-                    src="/logo.png"
-                    alt="Watermark"
-                    fill
-                    style={{ 
-                      objectFit: 'contain',
-                      opacity: 0.1,
-                      filter: 'grayscale(100%)'
-                    }}
-                  />
-                </div>
-              </div>
+              <div 
+                className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                style={{
+                  backgroundImage: 'url(/logo.png)',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: '80%',
+                  opacity: 0.1,
+                  filter: 'grayscale(100%)',
+                  zIndex: 0
+                }}
+              />
 
               {/* 계약서 내용 */}
-              <h1 className="text-center text-2xl font-bold mb-8">아크릴맛집 샘플 제작 및 추후 제작 안내 및 계약서</h1>
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                <h1 className="text-center text-2xl font-bold mb-8">아크릴맛집 샘플 제작 및 추후 제작 안내 및 계약서</h1>
               
               <div className="mb-8">
                 <h2 className="text-xl font-bold mb-4">계약 당사자</h2>
@@ -312,6 +312,7 @@ const ContractsPage: React.FC = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };
