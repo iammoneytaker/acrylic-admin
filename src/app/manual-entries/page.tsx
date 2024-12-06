@@ -14,10 +14,22 @@ interface ManualEntry {
 
 const ManualEntriesListPage: React.FC = () => {
   const [entries, setEntries] = useState<ManualEntry[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredEntries, setFilteredEntries] = useState<ManualEntry[]>([]);
 
   useEffect(() => {
     fetchEntries();
   }, []);
+
+  useEffect(() => {
+    const filtered = entries.filter((entry) =>
+      Object.values(entry)
+        .join(' ')
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
+    );
+    setFilteredEntries(filtered);
+  }, [searchTerm, entries]);
 
   const fetchEntries = async () => {
     const { data, error } = await supabase
@@ -124,6 +136,16 @@ const ManualEntriesListPage: React.FC = () => {
         </Link>
       </div>
 
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="검색어를 입력하세요..."
+          className="w-full p-2 border border-gray-300 rounded"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+
       <div className="overflow-x-auto bg-white shadow-md rounded-lg">
         <table className="min-w-full">
           <thead className="bg-gray-200">
@@ -143,7 +165,7 @@ const ManualEntriesListPage: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {entries.map((entry) => (
+            {filteredEntries.map((entry) => (
               <tr key={entry.id} className="hover:bg-gray-50">
                 <td className="px-4 py-4 whitespace-nowrap">
                   {entry.name_or_company}
