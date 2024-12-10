@@ -35,8 +35,8 @@ interface OnlineQuoteGeneratorProps {
   onClose: () => void;
 }
 
-const formatNumber = (num: number): string => {
-  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+const formatNumber = (num: number, decimalPlaces: number = 0): string => {
+  return num.toFixed(decimalPlaces).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
 const formatDate = (date: Date): string => {
@@ -689,6 +689,19 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                       </td>
                     </tr>
                   ))}
+                  {quoteItems.length < 10 &&
+                    [...Array(10 - quoteItems.length)].map((_, index) => (
+                      <tr key={`empty-${index}`}>
+                        <td className="px-4 py-2 border text-center">
+                          &nbsp;
+                        </td>
+                        <td className="px-4 py-2 border">&nbsp;</td>
+                        <td className="px-4 py-2 border text-right">&nbsp;</td>
+                        <td className="px-4 py-2 border text-right">&nbsp;</td>
+                        <td className="px-4 py-2 border text-right">&nbsp;</td>
+                        <td className="px-4 py-2 border text-right">&nbsp;</td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
 
@@ -711,7 +724,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
 
               <div className="text-right mb-6">
                 <p>공급가액: {formatNumber(calculateTotal())}원</p>
-                <p>부가세(10%): {formatNumber(calculateTotal() * 0.1)}원</p>
+                <p>부가세(10%): {formatNumber(calculateTotal() * 0.1, 0)}원</p>
                 <p className="font-bold text-xl">
                   총 금액:{' '}
                   {formatNumber(
@@ -751,7 +764,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                     <p>{effectiveCompanyName} 귀하</p>
                     <p>거래일: {quoteDate}</p>
                     <p>공급가액: {formatNumber(calculateTotal())}</p>
-                    <p>세액: {formatNumber(calculateTotal() * 0.1)}</p>
+                    <p>세액: {formatNumber(calculateTotal() * 0.1, 0)}</p>
                     <p>
                       합계금액:{' '}
                       {formatNumber(
@@ -799,20 +812,21 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                           {formatNumber(item.total)}
                         </td>
                         <td className="border border-gray-500 p-2 text-right">
-                          {formatNumber(item.total * 0.1)}
+                          {formatNumber(item.total * 0.1, 1)}
                         </td>
                       </tr>
                     ))}
-                    {[...Array(10 - quoteItems.length)].map((_, index) => (
-                      <tr key={`empty-${index}`}>
-                        <td className="border border-gray-500 p-2">&nbsp;</td>
-                        <td className="border border-gray-500 p-2"></td>
-                        <td className="border border-gray-500 p-2"></td>
-                        <td className="border border-gray-500 p-2"></td>
-                        <td className="border border-gray-500 p-2"></td>
-                        <td className="border border-gray-500 p-2"></td>
-                      </tr>
-                    ))}
+                    {quoteItems.length < 10 &&
+                      [...Array(10 - quoteItems.length)].map((_, index) => (
+                        <tr key={`empty-${index}`}>
+                          <td className="border border-gray-500 p-2">&nbsp;</td>
+                          <td className="border border-gray-500 p-2"></td>
+                          <td className="border border-gray-500 p-2"></td>
+                          <td className="border border-gray-500 p-2"></td>
+                          <td className="border border-gray-500 p-2"></td>
+                          <td className="border border-gray-500 p-2"></td>
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
                 {remarks && (
