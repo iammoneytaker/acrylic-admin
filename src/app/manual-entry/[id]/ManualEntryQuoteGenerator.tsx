@@ -685,7 +685,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                         {formatNumber(item.total)}원
                       </td>
                       <td className="px-4 py-2 border text-right">
-                        {formatNumber(item.total * 0.1)}
+                        {formatNumber(item.total * 0.1, 0)}원
                       </td>
                     </tr>
                   ))}
@@ -763,13 +763,13 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                   <div>
                     <p>{effectiveCompanyName} 귀하</p>
                     <p>거래일: {quoteDate}</p>
-                    <p>공급가액: {formatNumber(calculateTotal())}</p>
-                    <p>세액: {formatNumber(calculateTotal() * 0.1, 0)}</p>
+                    <p>공급가액: {formatNumber(calculateTotal())}원</p>
+                    <p>세액: {formatNumber(calculateTotal() * 0.1, 0)}원</p>
                     <p>
                       합계금액:{' '}
                       {formatNumber(
                         calculateTotal() + Math.round(calculateTotal() * 0.1)
-                      )}
+                      )}원
                     </p>
                   </div>
                   <div>
@@ -806,13 +806,13 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                           {formatNumber(item.quantity)}
                         </td>
                         <td className="border border-gray-500 p-2 text-right">
-                          {formatNumber(item.price)}
+                          {formatNumber(item.price)}원
                         </td>
                         <td className="border border-gray-500 p-2 text-right">
-                          {formatNumber(item.total)}
+                          {formatNumber(item.total)}원
                         </td>
                         <td className="border border-gray-500 p-2 text-right">
-                          {formatNumber(item.total * 0.1, 1)}
+                          {formatNumber(item.total * 0.1, 0)}원
                         </td>
                       </tr>
                     ))}

@@ -706,7 +706,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                         {formatNumber(item.total)}원
                       </td>
                       <td className="px-4 py-2 border text-right">
-                        {formatNumber(item.total * 0.1)}
+                        {formatNumber(item.total * 0.1, 0)}
                       </td>
                     </tr>
                   ))}
@@ -772,7 +772,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                     <p>{effectiveCompanyName} 귀하</p>
                     <p>거래일: {quoteDate}</p>
                     <p>공급가액: {formatNumber(calculateTotal())}</p>
-                    <p>세액: {formatNumber(calculateTotal() * 0.1, 1)}</p>
+                    <p>세액: {formatNumber(calculateTotal() * 0.1, 0)}</p>
                     <p>
                       합계금액:{' '}
                       {formatNumber(
@@ -820,7 +820,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                           {formatNumber(item.total)}
                         </td>
                         <td className="border border-gray-500 p-2 text-right">
-                          {formatNumber(item.total * 0.1, 1)}
+                          {formatNumber(item.total * 0.1, 0)}
                         </td>
                       </tr>
                     ))}
