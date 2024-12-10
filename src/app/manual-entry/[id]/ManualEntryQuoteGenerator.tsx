@@ -168,7 +168,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
   const addItem = useCallback(
     debounce(
       async () => {
-        if (newItem.product_name && newItem.quantity > 0 && newItem.price > 0) {
+        if (newItem.product_name && newItem.quantity > 0) {
           const draftId = await createOrUpdateDraft();
           if (!draftId) return;
 
