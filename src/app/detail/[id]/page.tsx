@@ -138,7 +138,7 @@ const DetailPage = () => {
     companyName: '아크릴맛집',
     representative: '윤우섭',
     businessNumber: '382-75-00268',
-    address: ' 서울특별시 중구 을지로33길 33, 청자빌딩 201호',
+    address: ' 서울특별시 을지로33길 31 명신빌딩 1층 101호',
     contactNumber: '010-2410-2474',
     email: 'official.uone@gmail.com',
   };
