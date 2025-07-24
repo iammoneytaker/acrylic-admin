@@ -181,7 +181,8 @@ const ExcelParser: React.FC = () => {
     const { data, error } = await supabase
       .from('submissions')
       .select('*')
-      .order('response_date_raw', { ascending: true });
+      .order('response_date_raw', { ascending: true })
+      .range(0, 9999); // 10000개까지 가져오기 (0부터 9999까지)
 
     if (error) {
       console.error('Error fetching data from Supabase:', error);
