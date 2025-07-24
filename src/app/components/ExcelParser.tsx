@@ -178,18 +178,40 @@ const ExcelParser: React.FC = () => {
   };
 
   const fetchDataFromSupabase = async () => {
-    const { data, error } = await supabase
+    // 전체 데이터 개수 먼저 확인
+    const { count } = await supabase
       .from('submissions')
-      .select('*')
-      .order('response_date_raw', { ascending: true })
-      .range(0, 9999); // 10000개까지 가져오기 (0부터 9999까지)
+      .select('*', { count: 'exact', head: true });
 
-    if (error) {
-      console.error('Error fetching data from Supabase:', error);
-    } else {
-      console.log('Fetched data from Supabase:', data);
-      setParsedData(data || []);
+    console.log('Total data count in database:', count);
+
+    // 데이터를 청크로 나누어 가져오기
+    const allData: any[] = [];
+    const chunkSize = 1000;
+    const totalChunks = Math.ceil((count || 0) / chunkSize);
+
+    for (let i = 0; i < totalChunks; i++) {
+      const start = i * chunkSize;
+      const end = start + chunkSize - 1;
+      
+      const { data, error } = await supabase
+        .from('submissions')
+        .select('*')
+        .order('response_date_raw', { ascending: true })
+        .range(start, end);
+
+      if (error) {
+        console.error(`Error fetching chunk ${i}:`, error);
+        break;
+      }
+      
+      if (data) {
+        allData.push(...data);
+      }
     }
+
+    console.log('Total fetched data:', allData.length);
+    setParsedData(allData);
   };
 
   const handleFileUpload = async (file: File) => {
