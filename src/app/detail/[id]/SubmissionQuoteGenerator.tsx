@@ -14,6 +14,7 @@ interface SupplierData {
   seal_url?: string | null;
   is_corporate?: boolean;
   corporate_name?: string | null;
+  seal_size?: number;
 }
 
 interface OrdererData {
@@ -108,6 +109,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
         seal_url: data.seal_url,
         is_corporate: data.is_corporate,
         corporate_name: data.corporate_name,
+        seal_size: data.seal_size || 100,
       });
     }
   };
@@ -783,6 +785,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                               <img
                                 src={activeSupplier.seal_url}
                                 alt="인"
+                                style={{ transform: `scale(${(activeSupplier.seal_size || 100) / 100})` }}
                                 className="absolute inset-0 w-full h-full opacity-80 object-contain pointer-events-none z-0"
                               />
                             )}
@@ -951,6 +954,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                               <img
                                 src={activeSupplier.seal_url}
                                 alt="인"
+                                style={{ transform: `scale(${(activeSupplier.seal_size || 100) / 100})` }}
                                 className="absolute inset-0 w-full h-full opacity-80 object-contain pointer-events-none z-0"
                               />
                             )}
