@@ -11,6 +11,9 @@ interface SupplierData {
   address: string;
   contactNumber: string;
   email: string;
+  seal_url?: string | null;
+  is_corporate?: boolean;
+  corporate_name?: string | null;
 }
 
 interface OrdererData {
@@ -30,7 +33,6 @@ interface QuoteItem {
 }
 
 interface OnlineQuoteGeneratorProps {
-  supplierData: SupplierData;
   ordererData: OrdererData;
   onClose: () => void;
 }
@@ -50,7 +52,6 @@ const formatDate = (date: Date): string => {
 };
 
 const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
-  supplierData,
   ordererData,
   onClose,
 }) => {
@@ -67,7 +68,11 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
   const [savedStatementUrl, setSavedStatementUrl] = useState<string | null>(
     null
   );
+  
+  // 여러 견적 관리를 위한 상태
+  const [drafts, setDrafts] = useState<any[]>([]);
   const [quoteDraftId, setQuoteDraftId] = useState<number | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
 
   const [remarks, setRemarks] = useState<string>('');
   const [editingRemarks, setEditingRemarks] = useState<boolean>(false);
@@ -75,33 +80,111 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [editingItem, setEditingItem] = useState<QuoteItem | null>(null);
   const [customCompanyName, setCustomCompanyName] = useState('');
+  const [customRepresentative, setCustomRepresentative] = useState('');
+
+  const [activeSupplier, setActiveSupplier] = useState<SupplierData | null>(null);
 
   const effectiveCompanyName = customCompanyName || ordererData.companyName;
+  const effectiveRepresentative = customRepresentative || ordererData.representative;
 
   useEffect(() => {
-    loadExistingDraft();
+    fetchActiveSupplier();
+    loadExistingDrafts();
   }, []);
 
-  const loadExistingDraft = async () => {
+  const fetchActiveSupplier = async () => {
+    const { data, error } = await supabase
+      .from('supplier_settings')
+      .select('*')
+      .eq('is_active', true)
+      .single();
+
+    if (error) {
+      console.error('Error fetching active supplier:', error);
+    } else if (data) {
+      setActiveSupplier({
+        companyName: data.company_name,
+        representative: data.representative,
+        businessNumber: data.business_number,
+        address: data.address,
+        contactNumber: data.contact_number,
+        email: data.email,
+        seal_url: data.seal_url,
+        is_corporate: data.is_corporate,
+        corporate_name: data.corporate_name,
+      });
+    }
+  };
+
+  const loadExistingDrafts = async () => {
     const { data, error } = await supabase
       .from('quote_drafts')
       .select('*')
-      .or(
-        `manual_entry_id.eq.${ordererData.id},manual_entry_id.eq.${ordererData.id}`
-      )
-      .single();
+      .or(`manual_entry_id.eq.${ordererData.id},manual_entry_id.eq.${ordererData.id}`)
+      .order('created_at', { ascending: true });
 
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error loading existing draft:', error);
+    if (error) {
+      console.error('Error loading existing drafts:', error);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      setDrafts(data);
+      // 마지막 견적을 기본값으로 선택
+      const lastDraft = data[data.length - 1];
+      selectDraft(lastDraft);
+    } else {
+      setDrafts([]);
+      setQuoteDraftId(null);
+    }
+  };
+
+  const selectDraft = async (draft: any) => {
+    setQuoteDraftId(draft.id);
+    setEditingTitle(draft.title || '');
+    setBusinessNumber(draft.business_number || '');
+    setShowBusinessNumber(!!draft.business_number);
+    setRemarks(draft.remarks || '');
+    setQuoteDate(formatDate(new Date(draft.created_at)));
+    await loadQuoteItems(draft.id);
+  };
+
+  const createNewDraft = async () => {
+    const newTitle = `${formatDate(new Date())} 새 견적`;
+    const { data, error } = await supabase
+      .from('quote_drafts')
+      .insert({
+        manual_entry_id: ordererData.id,
+        business_number: '',
+        remarks: '',
+        title: newTitle
+      })
+      .select();
+
+    if (error) {
+      console.error('Error creating new draft:', error);
       return;
     }
 
     if (data) {
-      setQuoteDraftId(data.id);
-      setBusinessNumber(data.business_number || '');
-      setShowBusinessNumber(!!data.business_number);
-      setRemarks(data.remarks || '');
-      await loadQuoteItems(data.id);
+      setDrafts([...drafts, data[0]]);
+      selectDraft(data[0]);
+      setQuoteItems([]);
+    }
+  };
+
+  const handleTitleBlur = async () => {
+    if (!quoteDraftId) return;
+
+    const { error } = await supabase
+      .from('quote_drafts')
+      .update({ title: editingTitle })
+      .eq('id', quoteDraftId);
+
+    if (error) {
+      console.error('Error updating title:', error);
+    } else {
+      setDrafts(drafts.map(d => d.id === quoteDraftId ? { ...d, title: editingTitle } : d));
     }
   };
 
@@ -317,23 +400,80 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
           <h3 className="text-lg leading-6 font-medium text-gray-900">
             온라인 견적서 생성
           </h3>
+
+          {/* 견적서 탭 바 추가 */}
+          <div className="mt-4 flex flex-wrap border-b border-gray-200">
+            {drafts.map((draft) => (
+              <button
+                key={draft.id}
+                onClick={() => selectDraft(draft)}
+                className={`py-2 px-4 text-sm font-medium border-b-2 ${
+                  quoteDraftId === draft.id
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                {draft.title || '제목 없음'}
+              </button>
+            ))}
+            <button
+              onClick={createNewDraft}
+              className="py-2 px-4 text-sm font-medium text-blue-600 hover:text-blue-800"
+            >
+              + 새 견적 추가
+            </button>
+          </div>
+
           <div className="mt-2 px-7 py-3">
             <div className="mb-4 space-y-2">
-              <div className="mb-4">
-                <label
-                  htmlFor="customCompanyName"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  대표자 이름 변경 (선택사항)
-                </label>
-                <input
-                  type="text"
-                  id="customCompanyName"
-                  value={customCompanyName}
-                  onChange={(e) => setCustomCompanyName(e.target.value)}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                  placeholder="변경할 대표자 이름을 입력하세요"
-                />
+              {quoteDraftId && (
+                <div className="mb-4 text-left">
+                  <label className="block text-sm font-medium text-gray-700">
+                    현재 견적서 제목 수정
+                  </label>
+                  <input
+                    type="text"
+                    value={editingTitle}
+                    onChange={(e) => setEditingTitle(e.target.value)}
+                    onBlur={handleTitleBlur}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm"
+                    placeholder="견적서 제목을 입력하세요 (예: 1차 견적, 날짜 등)"
+                  />
+                </div>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label
+                    htmlFor="customCompanyName"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    상호명 변경 (선택사항)
+                  </label>
+                  <input
+                    type="text"
+                    id="customCompanyName"
+                    value={customCompanyName}
+                    onChange={(e) => setCustomCompanyName(e.target.value)}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                    placeholder="변경할 상호명을 입력하세요"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="customRepresentative"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    대표자 이름 변경 (선택사항)
+                  </label>
+                  <input
+                    type="text"
+                    id="customRepresentative"
+                    value={customRepresentative}
+                    onChange={(e) => setCustomRepresentative(e.target.value)}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                    placeholder="변경할 대표자 이름을 입력하세요"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
@@ -603,28 +743,44 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                     공급자 정보
                   </div>
                   <div className="p-4">
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="font-bold">상호명</div>
-                      <div className="col-span-2">
-                        {supplierData.companyName}
+                    {activeSupplier ? (
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="font-bold">상호명</div>
+                        <div className="col-span-2">
+                          {activeSupplier.is_corporate ? activeSupplier.corporate_name : activeSupplier.companyName}
+                        </div>
+                        <div className="font-bold">대표자</div>
+                        <div className="col-span-2 flex items-center justify-center isolate">
+                          <span className="relative">
+                            {activeSupplier.representative}
+                          </span>
+                          <span className="relative ml-4 flex items-center justify-center w-12 h-12">
+                            <span className="z-10">(인)</span>
+                            {activeSupplier.seal_url && (
+                              <img
+                                src={activeSupplier.seal_url}
+                                alt="인"
+                                className="absolute inset-0 w-full h-full opacity-80 object-contain pointer-events-none z-0"
+                              />
+                            )}
+                          </span>
+                        </div>
+                        <div className="font-bold">사업자번호</div>
+                        <div className="col-span-2">
+                          {activeSupplier.businessNumber}
+                        </div>
+                        <div className="font-bold">주소</div>
+                        <div className="col-span-2">{activeSupplier.address}</div>
+                        <div className="font-bold">대표전화</div>
+                        <div className="col-span-2">
+                          {activeSupplier.contactNumber}
+                        </div>
+                        <div className="font-bold">e-mail</div>
+                        <div className="col-span-2">{activeSupplier.email}</div>
                       </div>
-                      <div className="font-bold">대표자</div>
-                      <div className="col-span-2">
-                        {supplierData.representative}
-                      </div>
-                      <div className="font-bold">사업자번호</div>
-                      <div className="col-span-2">
-                        {supplierData.businessNumber}
-                      </div>
-                      <div className="font-bold">주소</div>
-                      <div className="col-span-2">{supplierData.address}</div>
-                      <div className="font-bold">대표전화</div>
-                      <div className="col-span-2">
-                        {supplierData.contactNumber}
-                      </div>
-                      <div className="font-bold">e-mail</div>
-                      <div className="col-span-2">{supplierData.email}</div>
-                    </div>
+                    ) : (
+                      <div>공급자 정보를 불러오는 중...</div>
+                    )}
                   </div>
                 </div>
 
@@ -638,7 +794,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                       <div className="col-span-2">{effectiveCompanyName}</div>
                       <div className="font-bold">대표자</div>
                       <div className="col-span-2">
-                        {ordererData.representative}
+                        {effectiveRepresentative}
                       </div>
                       {showBusinessNumber && (
                         <>
@@ -773,13 +929,29 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                     </p>
                   </div>
                   <div>
-                    <p>등록번호: {supplierData.businessNumber}</p>
-                    <p>상호: {supplierData.companyName}</p>
-                    <p>성명: {supplierData.representative}</p>
-                    <p>사업장: {supplierData.address}</p>
-                    <p>업태: 제조업</p>
-                    <p>종목: 아크릴</p>
-                    <p>E-mail: {supplierData.email}</p>
+                    {activeSupplier && (
+                      <>
+                        <p>등록번호: {activeSupplier.businessNumber}</p>
+                        <p>상호: {activeSupplier.is_corporate ? activeSupplier.corporate_name : activeSupplier.companyName}</p>
+                        <div className="flex items-center justify-start isolate">
+                          <span>성명: {activeSupplier.representative}</span>
+                          <span className="relative ml-4 flex items-center justify-center w-10 h-10">
+                            <span className="z-10 text-sm">(인)</span>
+                            {activeSupplier.seal_url && (
+                              <img
+                                src={activeSupplier.seal_url}
+                                alt="인"
+                                className="absolute inset-0 w-full h-full opacity-80 object-contain pointer-events-none z-0"
+                              />
+                            )}
+                          </span>
+                        </div>
+                        <p>사업장: {activeSupplier.address}</p>
+                        <p>업태: 제조업</p>
+                        <p>종목: 아크릴</p>
+                        <p>E-mail: {activeSupplier.email}</p>
+                      </>
+                    )}
                   </div>
                 </div>
                 <table className="w-full border-collapse border border-gray-500">

@@ -133,15 +133,6 @@ const ManualEntryDetailPage: React.FC = () => {
     );
   }
 
-  const supplierData = {
-    companyName: '아크릴맛집',
-    representative: '윤우섭',
-    businessNumber: '382-75-00268',
-    address: '서울특별시 을지로33길 31 명신빌딩 1층 101호',
-    contactNumber: '010-2410-2474',
-    email: 'official.uone@gmail.com',
-  };
-
   const ordererData = {
     companyName: entry.name_or_company,
     representative: entry.name_or_company,
@@ -415,7 +406,6 @@ const ManualEntryDetailPage: React.FC = () => {
 
           {showQuoteModal && (
             <OnlineQuoteGenerator
-              supplierData={supplierData}
               ordererData={ordererData}
               onClose={() => setShowQuoteModal(false)}
             />
