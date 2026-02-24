@@ -775,6 +775,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                               <img
                                 src={activeSupplier.seal_url}
                                 alt="인"
+                                crossOrigin="anonymous"
                                 style={{ transform: `scale(${(activeSupplier.seal_size || 100) / 100})` }}
                                 className="absolute inset-0 w-full h-full opacity-80 object-contain pointer-events-none z-0"
                               />
@@ -957,6 +958,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                               <img
                                 src={activeSupplier.seal_url}
                                 alt="인"
+                                crossOrigin="anonymous"
                                 style={{ transform: `scale(${(activeSupplier.seal_size || 100) / 100})` }}
                                 className="absolute inset-0 w-full h-full opacity-80 object-contain pointer-events-none z-0"
                               />

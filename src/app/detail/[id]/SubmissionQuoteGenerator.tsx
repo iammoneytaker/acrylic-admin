@@ -785,6 +785,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                               <img
                                 src={activeSupplier.seal_url}
                                 alt="인"
+                                crossOrigin="anonymous"
                                 style={{ transform: `scale(${(activeSupplier.seal_size || 100) / 100})` }}
                                 className="absolute inset-0 w-full h-full opacity-80 object-contain pointer-events-none z-0"
                               />
@@ -946,7 +947,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                       <>
                         <p>등록번호: {activeSupplier.businessNumber}</p>
                         <p>상호: {activeSupplier.is_corporate ? activeSupplier.corporate_name : activeSupplier.companyName}</p>
-                        <div className="flex items-center justify-start isolate">
+                        <div className="flex items-center justify-center isolate">
                           <span>성명: {activeSupplier.representative}</span>
                           <span className="relative ml-4 flex items-center justify-center w-10 h-10">
                             <span className="z-10 text-sm">(인)</span>
@@ -954,6 +955,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                               <img
                                 src={activeSupplier.seal_url}
                                 alt="인"
+                                crossOrigin="anonymous"
                                 style={{ transform: `scale(${(activeSupplier.seal_size || 100) / 100})` }}
                                 className="absolute inset-0 w-full h-full opacity-80 object-contain pointer-events-none z-0"
                               />
