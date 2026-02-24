@@ -306,13 +306,26 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
     const statementElement = document.getElementById('transaction-statement');
 
     if (quoteElement && statementElement) {
-      const quoteCanvas = await html2canvas(quoteElement);
-      const quoteImgData = quoteCanvas.toDataURL('image/png');
-      setSavedQuoteUrl(quoteImgData);
+      try {
+        const quoteCanvas = await html2canvas(quoteElement, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+        });
+        const quoteImgData = quoteCanvas.toDataURL('image/png');
+        setSavedQuoteUrl(quoteImgData);
 
-      const statementCanvas = await html2canvas(statementElement);
-      const statementImgData = statementCanvas.toDataURL('image/png');
-      setSavedStatementUrl(statementImgData);
+        const statementCanvas = await html2canvas(statementElement, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+        });
+        const statementImgData = statementCanvas.toDataURL('image/png');
+        setSavedStatementUrl(statementImgData);
+      } catch (error) {
+        console.error('Error generating images:', error);
+        alert('이미지 생성 중 오류가 발생했습니다.');
+      }
     }
   };
 
@@ -936,7 +949,7 @@ const OnlineQuoteGenerator: React.FC<OnlineQuoteGeneratorProps> = ({
                       <>
                         <p>등록번호: {activeSupplier.businessNumber}</p>
                         <p>상호: {activeSupplier.is_corporate ? activeSupplier.corporate_name : activeSupplier.companyName}</p>
-                        <div className="flex items-center justify-start isolate">
+                        <div className="flex items-center justify-center isolate">
                           <span>성명: {activeSupplier.representative}</span>
                           <span className="relative ml-4 flex items-center justify-center w-10 h-10">
                             <span className="z-10 text-sm">(인)</span>
